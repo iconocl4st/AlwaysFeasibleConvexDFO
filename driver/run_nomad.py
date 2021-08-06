@@ -2,16 +2,13 @@ import traceback
 
 import PyNomad
 import sys
-import os
 import traceback
 import numpy as np
-import json
-import re
 
 from hott_schittowski.problems import HottSchittowski
-from trial_problems.simple_problems import TestProblems
-from utils.formatting import Formatting
-from utils.history import History
+from trial_problems.ht_problem import HottSschittowskiProblem
+from trial_problems.infeasible_strategies import InfeasibleStrategies
+from utils.assertions import make_assertion
 from utils.json_utils import JsonUtils
 from utils.run_result import RunResult
 from utils.run_result import RunParams
@@ -44,7 +41,7 @@ class InfeasibleStrategy:
 	SUCCEED = 'no-failures'
 
 
-def get_bb(problem, constraints, strategy, history):
+def get_bb(problem, history):
 	def bb(x):
 		try:
 			npX = np.array([
@@ -54,46 +51,26 @@ def get_bb(problem, constraints, strategy, history):
 
 			evaluation = problem.evaluate(npX)
 			history.add_evaluation(-1, evaluation)
-			if evaluation.success or strategy == InfeasibleStrategy.SUCCEED:
-				x.set_bb_output(0, ht_problem.objective(npX))
-				for idx, constraint in enumerate(constraints):
-					x.set_bb_output(idx + 1, constraint(npX))
-				return 1
-			elif strategy == InfeasibleStrategy.FAIL_WITH_NO_INFORMATION:
-				return 0
-			elif strategy == InfeasibleStrategy.FAIL_WITH_GARBAGE:
-				x.set_bb_output(0, 50000)
-				for idx, constraint in enumerate(constraints):
-					x.set_bb_output(idx + 1, 1.0)
-				return 0
-			elif strategy == InfeasibleStrategy.FAIL_WITH_INFORMATION:
-				x.set_bb_output(0, ht_problem.objective(npX))
-				for idx, constraint in enumerate(constraints):
-					x.set_bb_output(idx + 1, constraint(npX))
-				return 0
-			else:
-				raise Exception('Unknown case')
+
+			x.set_bb_output(0, ht_problem.objective(npX))
+			for idx, c_value in enumerate(evaluation.constraints):
+				x.set_bb_output(idx + 1, c_value)
+			return 0 if evaluation.failure else 1
 		except:
-			# print("Unexpected eval error", sys.exc_info()[0])
+			traceback.print_exc()
+			print("Unexpected eval error", sys.exc_info()[0])
 			return 0
 	return bb
 
 
 def run_hott_schittowski_problem(ht_problem, strategy):
-	if not ht_problem.initial.is_feasible:
-		return
-	if len(ht_problem.constraints) == 0:
-		return
-	success, problem = TestProblems.HottSschittowskiProblem.create_schittowski_problem(ht_problem)
-	if not success:
-		return
-	success, constraints = ht_problem.get_explicit_constraints()
+	success, problem = HottSschittowskiProblem.create_schittowski_problem(ht_problem, strategy)
 	if not success:
 		return
 
 	run_result = RunResult.create(
 		'nomad',
-		RunParams.create({'strategy': strategy}),
+		RunParams.create({}),
 		ht_problem)
 	run_result.status = 'failure'
 	run_result.status_details = 'run not completed'
@@ -107,7 +84,7 @@ def run_hott_schittowski_problem(ht_problem, strategy):
 	print(ht_problem.number, ht_problem.n, strategy)
 	try:
 		output = PyNomad.optimize(
-			get_bb(problem, constraints, strategy, run_result.history),
+			get_bb(problem, run_result.history),
 			[xi for xi in ht_problem.initial.x0],
 			[], [],  # bounds come from the params...
 			params.to_params())
@@ -125,14 +102,14 @@ if __name__ == '__main__':
 	np.seterr(all='raise')
 	try:
 		problem_num = int(sys.argv[-2])
-		strategy = sys.argv[-1]
+		strategy_str = sys.argv[-1]
 	except:
 		problem_num = 215
-		strategy = InfeasibleStrategy.FAIL_WITH_NO_INFORMATION
+		strategy_str = InfeasibleStrategy.FAIL_WITH_NO_INFORMATION
 		print('no problem specified')
-	else:
-		# if True:
-		ht_problem = HottSchittowski.get_problem_by_number(problem_num)
-		if ht_problem is not None:
-			run_hott_schittowski_problem(ht_problem, strategy)
+
+	strategy = InfeasibleStrategies.get_infeasible_strategy(strategy_str)
+	ht_problem = HottSchittowski.get_problem_by_number(problem_num)
+	if ht_problem is not None:
+		run_hott_schittowski_problem(ht_problem, strategy)
 

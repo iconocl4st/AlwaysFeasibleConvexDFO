@@ -1,6 +1,7 @@
 import numpy as np
 
 from pyomo_opt.project import project
+from utils.assertions import make_assertion
 from utils.bounds import Bounds
 from utils.polyhedron import Polyhedron
 
@@ -51,12 +52,13 @@ def check_criticality(state, model):
 	state.logger.log_matrix('projected gradient', p)
 	state.logger.verbose('distance to projection: ' + str(criticality))
 
-	assert success, 'unable to compute criticality measure'
+	make_assertion(success, 'unable to compute criticality measure')
 	ret = {
 		'converged':
 			criticality < state.params.threshold_criticality and
 			state.outer_tr_radius < state.params.threshold_tr_radius,
 		'critical':
+			# not state.unbound_radius and
 			criticality < state.params.kappa_crit * state.outer_tr_radius ** state.params.p_delta,
 		'criticality': criticality,
 	}

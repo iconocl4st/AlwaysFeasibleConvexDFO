@@ -2,6 +2,7 @@
 import numpy as np
 
 from utils.bounds import Bounds
+from utils.default_stringable import DefaultStringable
 from utils.tr import solve_tr_subproblem
 from utils.polynomial import Polynomial
 from utils.polynomial import MultiIndex
@@ -28,7 +29,7 @@ class LagrangeParams:
 		}
 
 
-class Certification:
+class Certification(DefaultStringable):
 	def __init__(self):
 		self.params = None
 		self.success = None

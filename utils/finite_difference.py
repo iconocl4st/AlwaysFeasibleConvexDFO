@@ -58,3 +58,46 @@ def construct_initial_ellipsoid(constraints, initial, delta=1e-2):
 	print(A, c)
 
 
+def find_feasible_start(problem):
+	if not problem.initial.is_feasible:
+		return False, None, None, None
+	if problem.number == 215:
+		return True, np.array([0.5, 1.5]), np.array([[1.0, 0.0], [0.0, 1.0]]), 0.5
+	elif problem.number == 218:
+		return True, np.array([9, 100]), np.array([[1.0, 0.0], [0.0, 1.0]]), 0.75
+	elif problem.number == 221:
+		return True, np.array([0.2, 0.25]), np.array([[1.0, 0.0], [0.0, 1.0]]), 0.1
+	elif problem.number == 222:
+		return True, np.array([1.4, 0.1]), np.array([[1.0, 0.0], [0.0, 1.0]]), 0.1
+	elif problem.number == 223:
+		return True, np.array([0.1, 3.4]), np.array([[1.0, 0.0], [0.0, 1.0]]), 0.025
+	elif problem.number == 224:
+		return True, np.array([1.0, 1.0]), np.array([[1.0, 0.0], [0.0, 1.0]]), 1.0
+	elif problem.number == 225:
+		return True, np.array([3.0, 0.5]), np.array([[1.0, 0.0], [0.0, 1.0]]), 1.0
+	elif problem.number == 226:
+		return True, np.array([0.7, 0.2]), np.array([[1.0, 0.0], [0.0, 1.0]]), 0.2
+	elif problem.number == 227:
+		return True, np.array([0.5, 0.5]), np.array([[1.0, 0.0], [0.0, 1.0]]), 0.1
+	elif problem.number == 228:
+		return True, np.array([0, 0]), np.array([[1.0, 0.0], [0.0, 1.0]]), 0.5
+	elif problem.number == 231:
+		return True, np.array([-1.2, 1]), np.array([[1.0, 0.0], [0.0, 1.0]]), 1/3.0
+	elif problem.number == 232:
+		return True, np.array([2, 0.5]), np.array([[1.0, 0.0], [0.0, 1.0]]), 1/3.0
+	elif problem.number == 233:
+		return True, np.array([1.2, 1]), np.array([[1.0, 0.0], [0.0, 1.0]]), 0.1
+	elif problem.number == 249:
+		return True, np.array([2, 1, 1]), np.eye(3), 1
+
+	success, constraints = problem.get_all_le_constraints()
+	if not success:
+		return False, None, None, None
+	success, center, q, radius = construct_initial_ellipsoid(constraints, problem.initial.x0)
+	if not success:
+		return False, None, None, None
+	return success, center, q, radius
+
+
+
+

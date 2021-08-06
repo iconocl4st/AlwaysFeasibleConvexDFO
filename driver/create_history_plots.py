@@ -8,41 +8,9 @@ from settings import EnvironmentSettings
 from utils.plotting import Plotting
 from visualizations.visualize_hott_schittowski import add_problem_to_plot
 from visualizations.visualize_runs import generate_table
+import utils.performance as perf
 
 # state.history.create_plot(state.plotter, verbose=False)
-
-
-def get_minimum_so_far(values):
-	ret = np.zeros_like(values)
-	minimum_so_far = np.inf
-	for idx, v in enumerate(values):
-		minimum_so_far = min(minimum_so_far, v)
-		ret[idx] = minimum_so_far
-	return ret
-
-
-def get_maximum_remaining(values):
-	ret = np.zeros_like(values)
-	maximum_remaining = -np.inf
-	for idx, v in [(idx, v) for idx, v in enumerate(values)][::-1]:
-		maximum_remaining = max(maximum_remaining, v)
-		ret[idx] = maximum_remaining
-	return ret
-
-
-def get_last_interesting_index(values, eps=0.01):
-	mini = min(values)
-	maxi = max(values)
-	minimums_so_far = get_minimum_so_far(values)
-	maximum_remainings = get_maximum_remaining(values)
-
-	for idx, (min_sf, max_re) in enumerate(zip(minimums_so_far, maximum_remainings)):
-		if (
-				min_sf - mini < eps * (maxi - mini) and
-				max_re - mini < eps * (maxi - mini)
-		):
-			return idx, minimums_so_far, maximum_remainings
-	return len(values) - 1, minimums_so_far, maximum_remainings
 
 
 class MockPlotter:
@@ -53,14 +21,7 @@ class MockPlotter:
 		return Plotting.create_plot(title, self.path, bounds)
 
 
-class PerformancePlotType:
-	MAX_REMAINING = 'max_remaining'
-	MIN_SO_FAR = 'min_so_far'
-	ALL = 'all'
-	INTERESTING = 'interesting'
-
-
-def create_performance_plot(folder, problem_no, run_results, type):
+def create_performance_plot(folder, problem_no, run_results, perf_type):
 	if len(run_results) < 2:
 		return
 
@@ -68,36 +29,17 @@ def create_performance_plot(folder, problem_no, run_results, type):
 	ax = fig.add_subplot(111)
 	plt.legend(loc='lower left')
 
-	plt.title('Performance plot for ' + str(problem_no) + ', type=' + type)
+	plt.title('Performance plot for ' + str(problem_no) + ', type=' + perf_type)
 
 	for run_result in run_results:
-		evaluations = run_result.history.evaluations
-		oys = [e.objective for _, e in evaluations if e.success]
-		oxs = [idx for idx, (_, e) in enumerate(evaluations) if e.success]
-
-		last_interesting_index, minimums_so_far, maximum_remainings = get_last_interesting_index(oys)
-
-		if type == PerformancePlotType.MAX_REMAINING:
-			xs = oxs
-			ys = maximum_remainings
-		elif type == PerformancePlotType.MIN_SO_FAR:
-			xs = oxs
-			ys = minimums_so_far
-		elif type == PerformancePlotType.ALL:
-			xs = oxs
-			ys = oys
-		elif type == PerformancePlotType.INTERESTING:
-			xs = oxs[:last_interesting_index]
-			ys = oys[:last_interesting_index]
-		else:
-			raise Exception('Unknown type: ' + str(type))
-
+		xs, ys = perf.get_performance(run_result.history, perf_type)
 		plt.plot(xs, ys, label=run_result.unique_identifier())
+
 	plt.show()
 	ax.legend()
 	ax.grid(True)
 
-	image_path = os.path.join(folder, str(problem_no) + '_' + type + '.png')
+	image_path = os.path.join(folder, str(problem_no) + '_' + perf_type + '.png')
 	fig.savefig(image_path)
 	plt.close()
 
@@ -150,13 +92,8 @@ def create_plots(root_directory, plot_histories=False, plot_performance=False):
 		performance_folder = EnvironmentSettings.get_output_path(['results', 'performance'])
 		os.makedirs(performance_folder, exist_ok=True)
 		for problem_no, run_results in by_problem.items():
-			for type in [
-				PerformancePlotType.MAX_REMAINING,
-				PerformancePlotType.MIN_SO_FAR,
-				PerformancePlotType.ALL,
-				PerformancePlotType.INTERESTING
-			]:
-				create_performance_plot(performance_folder, problem_no, run_results, type)
+			for perf_type in perf.PerformancePlotType.ALL_TYPES:
+				create_performance_plot(performance_folder, problem_no, run_results, perf_type)
 
 	print_stats(by_problem)
 

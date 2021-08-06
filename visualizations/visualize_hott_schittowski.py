@@ -6,7 +6,7 @@ from utils.ellipsoid import Ellipsoid
 from utils.plotting import Plotting
 from utils.bounds import Bounds
 from hott_schittowski.problems import HottSchittowski
-from trial_problems.simple_problems import find_feasible_start
+from utils.finite_difference import find_feasible_start
 
 
 def add_problem_to_plot(problem, plt):

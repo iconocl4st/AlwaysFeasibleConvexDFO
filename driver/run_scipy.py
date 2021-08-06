@@ -1,103 +1,102 @@
-from scipy.optimize import minimize
+import scipy.optimize
 
-from driver.infeasible_strategies import InfeasibleStrategies
+from hott_schittowski import problems
+from trial_problems.ht_problem import HottSschittowskiProblem
+from trial_problems.infeasible_strategies import InfeasibleStrategies
 
-
-import traceback
-
-import sys
-import os
 import traceback
 import numpy as np
-import json
-import re
+
+import scipy.optimize
 
 from hott_schittowski.problems import HottSchittowski
-from trial_problems.simple_problems import TestProblems
-from utils.formatting import Formatting
-from utils.history import History
 from utils.json_utils import JsonUtils
 from utils.run_result import RunResult
 from utils.run_result import RunParams
 
 
-
-def get_bb(problem, constraints, strategy, history):
+def get_bb(problem, history):
 	def bb(x):
-		try:
-			npX = np.array([
-				x.get_coord(i)
-				for i in range(x.get_n())
-			], dtype=np.float64)
-
-			evaluation = problem.evaluate(npX)
-			history.add_evaluation(-1, evaluation)
-			if evaluation.success or strategy == InfeasibleStrategy.SUCCEED:
-				x.set_bb_output(0, ht_problem.objective(npX))
-				for idx, constraint in enumerate(constraints):
-					x.set_bb_output(idx + 1, constraint(npX))
-				return 1
-			elif strategy == InfeasibleStrategy.FAIL_WITH_NO_INFORMATION:
-				return 0
-			elif strategy == InfeasibleStrategy.FAIL_WITH_GARBAGE:
-				x.set_bb_output(0, 50000)
-				for idx, constraint in enumerate(constraints):
-					x.set_bb_output(idx + 1, 1.0)
-				return 0
-			elif strategy == InfeasibleStrategy.FAIL_WITH_INFORMATION:
-				x.set_bb_output(0, ht_problem.objective(npX))
-				for idx, constraint in enumerate(constraints):
-					x.set_bb_output(idx + 1, constraint(npX))
-				return 0
-			else:
-				raise Exception('Unknown case')
-		except:
-			# print("Unexpected eval error", sys.exc_info()[0])
-			return 0
+		evaluation = problem.evaluate(x)
+		history.add_evaluation(-1, evaluation)
+		return evaluation.objective
 	return bb
 
 
-def run_scipy(ht_problem, strategy):
-	success, problem = TestProblems.HottSschittowskiProblem.create_schittowski_problem(ht_problem)
-	if not success:
-		return
-	success, constraints = ht_problem.get_explicit_constraints()
+# def callback(*params, **kparams):
+# 	return False
+
+def create_nonlinear_constraint(problem, index):
+	return scipy.optimize.NonlinearConstraint(
+		fun=lambda x: problem.evaluate(x).constraints[index],
+		lb=-np.inf,
+		ub=0,
+		# keep_feasible=True
+	)
+
+
+def ensure_bounds(b, dim):
+	return b if b is not None else [None] * dim
+
+
+def run_scipy(ht_problem, params, strategy):
+	success, problem = HottSschittowskiProblem.create_schittowski_problem(ht_problem, strategy)
 	if not success:
 		return
 
 	run_result = RunResult.create(
 		'scipy',
-		RunParams.create({'strategy': strategy}),
+		RunParams.create({}),
 		ht_problem)
-	run_result.status = 'failure'
-	run_result.status_details = 'run not completed'
-
 	print(ht_problem.number, ht_problem.n, strategy)
 	try:
-		output = PyNomad.optimize(
-			get_bb(problem, constraints, strategy, run_result.history),
-			[xi for xi in ht_problem.initial.x0],
-			[], [],  # bounds come from the params...
-			params.to_params())
+		output = scipy.optimize.minimize(
+			fun=get_bb(problem, run_result.history),
+			x0=ht_problem.initial.x0,
+			# args=(),
+			# method=params.map['method'],
+			# jac=None,
+			# hess=None,
+			# hessp=None,
+			bounds=scipy.optimize.Bounds(
+				lb=problems.Bounds.to_pdfo(ht_problem.bounds.lb, -np.inf, ht_problem.n),
+				ub=problems.Bounds.to_pdfo(ht_problem.bounds.ub, np.inf, ht_problem.n),
+				# keep_feasible=True
+			),
+			constraints=[
+				create_nonlinear_constraint(problem, i)
+				for i in range(problem.num_constraints)
+			],
+			tol=1e-4,
+			# callback=None,
+			options={
+				'maxiter': 10000,
+				'disp': False,
+			},
+		)
 	except:
 		traceback.print_exc()
 		return
 
+	print(output)
+
+	run_result.status_details = output.message
+	run_result.num_iterations = output.nit
+	run_result.status = 'successful' if output.success else 'failed'
+
 	run_result.ensure_output_directory()
 	result_file = run_result.get_result_file()
-	run_result.status = 'successful'
-	[_, _, _, _, run_result.num_iterations, run_result.status_details] = output
 	with open(result_file, 'w') as output:
 		JsonUtils.dump(run_result, output)
 
 
 if __name__ == '__main__':
-	problem_num = 215
 	run_params = RunParams.create({
-		'strategy': InfeasibleStrategies.FailWithNoInformation(),
-		'method': 'BGFS',
+		# 'method': 'Powell',
 	})
-	ht_problem = HottSchittowski.get_problem_by_number(problem_num)
-	if ht_problem is not None:
-		run_scipy(ht_problem, run_params)
+	strategy = InfeasibleStrategies.Succeed()
+	for ht_problem in HottSchittowski.PROBLEMS:
+		if ht_problem.number == 67:
+			continue
+		run_scipy(ht_problem, run_params, strategy)
 

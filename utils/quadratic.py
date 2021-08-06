@@ -1,8 +1,11 @@
 
 import numpy as np
 
+from utils.assertions import make_assertion
+from utils.default_stringable import DefaultStringable
 
-class Quadratic:
+
+class Quadratic(DefaultStringable):
 	def __init__(self):
 		self.c = None
 		self.g = None
@@ -101,6 +104,10 @@ class Quadratic:
 
 	@staticmethod
 	def create(c, g, Q):
+		make_assertion(not np.isnan(c), 'nan in quadratic')
+		make_assertion(not np.isnan(g).any(), 'nan in quadratic')
+		make_assertion(not np.isnan(Q).any(), 'nan in quadratic')
+
 		quad = Quadratic()
 		quad.c = c
 		quad.g = g

@@ -2,8 +2,9 @@ import os
 
 import numpy as np
 
-from trial_problems.simple_problems import TestProblems
+from utils.assertions import make_assertion
 from utils.convexity_tester import ConvexityTester
+from utils.default_stringable import DefaultStringable
 from utils.plotting import Plotter
 from utils.history import History
 from utils.logger import Logger
@@ -11,8 +12,10 @@ from utils.logger import Logger
 from utils.ellipsoid import Ellipsoid
 from utils.polynomial import MultiIndex
 
+from trial_problems.ht_problem import HottSschittowskiProblem
 
-class UserParams:
+
+class UserParams(DefaultStringable):
 	def __init__(self):
 		self.threshold_criticality = 1e-4
 		self.threshold_tr_radius = 1e-4
@@ -20,17 +23,17 @@ class UserParams:
 		self.threshold_reduction_sufficient = 0.9
 		self.threshold_reduction_minimum = 0.1
 		self.tr_update_dec = 0.5
-		self.tr_update_inc = 1.1
+		self.tr_update_inc = 1.5
 		self.alpha = 0.99
 		self.beta = 0.99
-		self.kappa_crit = 1.0
+		self.kappa_crit = 1e-2
 		self.p_beta = 0.99
 		self.p_alpha = 0.99
 		self.p_chi = None
 		self.p_delta = 0.99 * min(self.p_alpha, self.p_beta)
-		self.maximum_iterations = np.inf
+		self.maximum_iterations = 500
 		self.sample_point_filter = 'trust-region-radius'
-		self.xsi_replace = 1e-1
+		self.xsi_replace = 1e-2
 		self.ka = np.sqrt(2)
 		self.plot_lagrange_maximizations = False
 
@@ -117,7 +120,7 @@ class UserParams:
 		return params
 
 
-class AlgorithmState:
+class AlgorithmState(DefaultStringable):
 	def __init__(self):
 		self.root_directory = None
 
@@ -141,6 +144,8 @@ class AlgorithmState:
 		self.buffering_plot = None
 		self.evaluation_count = None
 
+		self.unbound_radius = None
+
 	@property
 	def dim(self):
 		return len(self.current_iterate)
@@ -156,7 +161,7 @@ class AlgorithmState:
 		self.logger.info('Evaluated at ' + str(x) + ', feasible = ' + str(evaluation.success))
 		return evaluation
 
-	def to_json(self):
+	def to_json(self, show_history=True):
 		return {
 			'problem': self.problem,
 			'root-directory': self.root_directory,
@@ -165,22 +170,23 @@ class AlgorithmState:
 			'current-iterate': self.current_iterate,
 			'outer-tr-radius': self.outer_tr_radius,
 			'sample-region': self.sample_region,
-			'history': self.history,
 			'plotter': self.plotter,
 			'evaluation-count': self.evaluation_count,
 			'iteration': self.iteration,
 			'convexity': self.convexity_tester,
+			'unbound-radius': self.unbound_radius,
+			**({'history': self.history} if show_history else {}),
 		}
 
 	@staticmethod
-	def parse_json(json, new_root=None):
+	def parse_json(json, history_json, new_root=None):
 		if new_root is None:
 			new_root = json['root-directory']
 
 		algo_state = AlgorithmState()
 		algo_state.root_directory = new_root
 
-		algo_state.problem = TestProblems.parse_json(json['problem'])
+		algo_state.problem = HottSschittowskiProblem.parse_json(json['problem'])
 		algo_state.params = UserParams.parse_json(json['params'])
 
 		algo_state.iteration = json['iteration']
@@ -190,9 +196,15 @@ class AlgorithmState:
 		algo_state.evaluation_count = json['evaluation-count']
 		algo_state.convexity_tester = ConvexityTester.parse_json(json['convexity'])
 
-		algo_state.history = History.parse_json(json['history'])
+		if history_json is not None:
+			algo_state.history = History.parse_json(history_json)
+		elif 'history' in json:
+			algo_state.history = History.parse_json(json['history'])
+		else:
+			raise Exception('Unable to find history')
 		algo_state.logger = Logger.create(os.path.join(new_root, 'log_file.txt'))
 		algo_state.plotter = Plotter.parse_json(json['plotter'], new_image_path=os.path.join(new_root, 'images'))
+		algo_state.unbound_radius = json['unbound-radius']
 
 		# The only basis supported right now...
 		algo_state.basis = MultiIndex.get_quadratic_basis(len(algo_state.current_iterate))
@@ -211,6 +223,7 @@ class AlgorithmState:
 
 		algo_state.logger = Logger.create(os.path.join(root_directory, 'log_file.txt'))
 		algo_state.plotter = Plotter.create(os.path.join(root_directory, 'images'))
+		algo_state.unbound_radius = False
 
 		algo_state.iteration = 0
 		algo_state.current_iterate = problem_spec.get_initial_x()
@@ -222,5 +235,5 @@ class AlgorithmState:
 		)
 		algo_state.basis = MultiIndex.get_quadratic_basis(len(algo_state.current_iterate))
 		initial_evaluation = algo_state.evaluate(algo_state.current_iterate)
-		assert initial_evaluation.success, 'Initial point not feasible'
+		make_assertion(initial_evaluation.success, 'Initial point not feasible')
 		return algo_state

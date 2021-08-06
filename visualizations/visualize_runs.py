@@ -1,18 +1,8 @@
 import os
-import re
 import json
 
-from utils.evaluation import Evaluation
-from hott_schittowski.problems import HottSchittowski
-from utils.convexity_tester import ConvexityTester
 from utils.formatting import Formatting
 from utils.run_result import RunResult
-
-
-def should_show_result(run_result):
-	if run_result.algorithm_name == 'nomad':
-		return run_result.run_params.map['strategy'] == 'fail-with-garbage'
-	return run_result.ht_problem.n < 10
 
 
 def generate_table(root_directory):
@@ -26,8 +16,6 @@ def generate_table(root_directory):
 
 		if not run_result.has_evaluations():
 			continue
-		if not should_show_result(run_result):
-			continue
 
 		yield run_result
 
@@ -36,6 +24,10 @@ def print_table(root_directory):
 	sorted_results = sorted(
 		[e for e in generate_table(root_directory)],
 		key=lambda x: (str(x.ht_problem.number), str(x.algorithm_name)))
+	sorted_results = filter(
+		lambda x: x.algorithm_name == 'always_feasible',
+		sorted_results
+	)
 	print(Formatting.format_strings(
 		[RunResult.get_headers()] + [
 			te.to_row()

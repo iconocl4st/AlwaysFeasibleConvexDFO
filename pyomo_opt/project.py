@@ -35,7 +35,11 @@ def project(x0, A, b, logger=None, hotstart=None, tol=None):
 	def objective_rule(m):
 		return sum((m.x[i] - x0[i]) ** 2 for i in range(n))
 	model.objective = Objective(rule=objective_rule, sense=minimize)
-	result = opt.solve(model, tee=False)
+	try:
+		result = opt.solve(model, tee=False)
+	except:
+		print('unable to project...')
+		raise
 
 	if logger is not None:
 		string_stream = StringIO()

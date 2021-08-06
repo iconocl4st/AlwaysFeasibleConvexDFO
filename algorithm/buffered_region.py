@@ -1,7 +1,9 @@
 import numpy as np
 
 from pyomo_opt.feasible_direction import find_feasible_direction
+from utils.assertions import make_assertion
 from utils.bounds import Bounds
+from utils.default_stringable import DefaultStringable
 from utils.polyhedron import Polyhedron
 from utils.project_onto_cone import project_onto_edge_of_cone
 from utils.project_onto_cone import sphere_is_contained_within_cone
@@ -43,13 +45,13 @@ from utils.project_onto_cone import sphere_is_contained_within_cone
 # 		cone.vertex = vertex
 # 		cone.open_direction = open_direction
 # 		nrm = np.linalg.norm(open_direction)
-# 		assert 1e-12 < nrm < 1e100, 'implement me: how to normalize?'
+# 		make_assertion(1e-12 < nrm < 1e100, 'implement me: how to normalize?')
 # 		cone.open_direction = open_direction / nrm
 # 		cone.open_width = beta
 # 		return cone
 
 
-class Cone:
+class Cone(DefaultStringable):
 	def __init__(self):
 		self.vertex = None
 		self.open_direction = None
@@ -95,13 +97,13 @@ class Cone:
 		cone.vertex = vertex
 		cone.open_direction = open_direction
 		nrm = np.linalg.norm(open_direction)
-		assert 1e-12 < nrm < 1e100, 'implement me: how to normalize?'
+		make_assertion(1e-12 < nrm < 1e100, 'implement me: how to normalize?')
 		cone.open_direction = open_direction / nrm
 		cone.open_width = beta
 		return cone
 
 
-class BufferedRegion:
+class BufferedRegion(DefaultStringable):
 	def __init__(self):
 		self.active_indices = None
 		self.num_active_constraints = None
@@ -195,8 +197,8 @@ def compute_buffering_cones(state, model):
 	br = BufferedRegion()
 
 	# for when the tr is large...
-	buffer_alpha_low = 0.75
-	buffer_beta_high = 0.25
+	buffer_alpha_low = 0.95
+	buffer_beta_high = 0.05
 
 	br.bdpb = min(buffer_beta_high, state.params.beta * state.outer_tr_radius ** state.params.p_beta)
 	br.adpa = max(buffer_alpha_low, 1 - state.params.alpha * state.outer_tr_radius ** state.params.p_alpha)
@@ -212,8 +214,8 @@ def compute_buffering_cones(state, model):
 		elif abs(gradient_norms[i]) > 1e-12:
 			z = -constraint_values[i] / gradient_norms[i] ** 2 * gradients[i]
 			zs.append(z)
-			assert abs(constraint_values[i] + gradients[i] @ z) < 1e-8, 'could not compute zero of constraint'
-			assert abs(model.shifted_A[i] @ z - model.shifted_b[i]) < 1e-8, 'zeros of linearizations did not match'
+			make_assertion(abs(constraint_values[i] + gradients[i] @ z) < 1e-8, 'could not compute zero of constraint')
+			make_assertion(abs(model.shifted_A[i] @ z - model.shifted_b[i]) < 1e-8, 'zeros of linearizations did not match')
 		else:
 			zs.append([np.nan] * state.dim)
 	br.zs = np.array(zs)

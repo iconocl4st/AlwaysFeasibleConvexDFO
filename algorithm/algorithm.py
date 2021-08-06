@@ -50,6 +50,8 @@ def end_iteration(state, iteration_result, model=None, br=None):
 		state.current_plot.save()
 		return iteration_result
 
+	state.unbound_radius = iteration_result.update_radius and iteration_result.radius_update > 1.0
+
 	if iteration_result.infeasible_sample_region:
 		repair_sample_region(state)
 		state.current_plot.save()
@@ -88,13 +90,16 @@ def log_iteration(state, model, br, it_result, crit_check, cert):
 	state.logger.info('trust region: {center=' + str(state.current_iterate) + ',radius=' + str(state.outer_tr_radius) + '}')
 	with open(os.path.join(dir_name, file_name), 'w') as json_out:
 		json_out.write(JsonUtils.dumps({
-			'state': state,
+			'state': state.to_json(show_history=False),
 			'model': model,
 			'buffered-region': br,
 			'iteration-result': it_result,
 			'criticality-check': crit_check,
 			'certification': cert,
 		}))
+
+	with open(os.path.join(dir_name, 'history.json'), 'w') as json_out:
+		json_out.write(JsonUtils.dumps({'history': state.history}))
 
 
 def run_iteration(state):
@@ -127,6 +132,9 @@ def run_iteration(state):
 		tr_solution = solve_tr_subproblem(state, model, buffered_region)
 		it_result = test_for_improvement(state, model, tr_solution)
 		return end_iteration(state, it_result, model, buffered_region)
+
+
+		# TODO: set the next bounded_radius....
 	finally:
 		log_iteration(state, model, buffered_region, it_result, criticality_check, certification)
 		state.current_plot.save()

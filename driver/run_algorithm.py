@@ -9,10 +9,6 @@ from utils.json_utils import JsonUtils
 
 
 def run_problem(run_result, problem, dry_run):
-	if problem.n > 10:
-		print('problem has a large dimension', problem.n)
-		return
-
 	output_folder = run_result.get_output_folder()
 	result_file = run_result.get_result_file()
 

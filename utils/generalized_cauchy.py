@@ -5,6 +5,7 @@ import numpy as np
 
 from pyomo_opt.project import project
 from settings import EnvironmentSettings
+from utils.assertions import make_assertion
 from utils.bounds import Bounds
 from utils.json_utils import JsonUtils
 from utils.plotting import Plotting
@@ -20,7 +21,7 @@ class GeneralizedCauchyParams:
 		self.A = None
 		self.b = None
 		self.cur_val = None
-		self.plot_each_iteration = True
+		self.plot_each_iteration = False
 		self.plotter = None
 
 		self.k_lbs = 0.75
@@ -184,6 +185,7 @@ def _binary_search(gcp, t):
 
 def compute_generalized_cauchy_point(gcp):
 	tmin = 0
+	# I don't like the following line...
 	t = gcp.radius / max(1e-4, min(20.0, np.linalg.norm(gcp.gradient)))
 	tmax = None
 	s = None
@@ -197,8 +199,12 @@ def compute_generalized_cauchy_point(gcp):
 		s = _do_projection(scaled_gradient, gcp.A, gcp.b, hotstart=s, tol=1e-12)
 		projections.append(s)
 
-		active_indices = np.abs(gcp.A @ s - gcp.b) > -gcp.tol
-		l = _do_projection(-gcp.gradient, gcp.A[active_indices], np.zeros(sum(active_indices)), tol=1e-12)
+		active_indices = gcp.A @ s - gcp.b > -gcp.tol
+
+		if gcp.A[active_indices].shape[0] == 0:
+			l = -gcp.gradient
+		else:
+			l = _do_projection(-gcp.gradient, gcp.A[active_indices], np.zeros(sum(active_indices)), tol=1e-12)
 		tangent_cone_projections.append(l)
 
 		val = gcp.model.evaluate(s)
@@ -262,14 +268,15 @@ def compute_generalized_cauchy_point(gcp):
 					title='Generalized Cauchy Point',
 					subfolder='gc'
 				)
-				# filename = EnvironmentSettings.get_sub_path('images/gc/generalized_cauchy_iteration_' + str(k) + '.png')
 				# os.makedirs(os.path.dirname(filename), exist_ok=True)
-				# plt = Plotting.create_plot_on(filename, gcp.x - 5, gcp.x + 5, 'Generalized Cauchy point')
-				for i in range(gcp.A.shape[0]):
-					plt.add_contour(lambda x: gcp.A[i] @ x - gcp.b[i], label='constraint', color='m', lvls=[-0.1, 0])
+				plt.add_lines(gcp.A, gcp.b, label='constraint', color='m')
 				plt.add_point(gcp.x, label='center', color='green')
 				plt.add_point(gcp.x - gcp.gradient, label='negative gradient', color='red')
-				plt.add_arrow(gcp.x, gcp.x - gcp.gradient, label='negative gradient', color='c', width=0.05)
+				plt.add_arrow(
+					gcp.x,
+					gcp.x - gcp.gradient,
+					label='negative gradient', color='c',
+					width=0.005 * np.min(bounds.ub - bounds.lb))
 				plt.add_point(s, label='projected gradient path', color='blue')
 				plt.add_point(gcp.x + l, label='projected tangent', color='yellow')
 				plt.save()
@@ -277,14 +284,16 @@ def compute_generalized_cauchy_point(gcp):
 				gcp.logger.log_message('unable to plot generalized cauchy iteration')
 
 	if gcp.log_failure:
-		with open(EnvironmentSettings.get_sub_path('failure.json'), 'w') as failure_out:
+		with open(EnvironmentSettings.get_output_path(['gc_failure.json']), 'w') as failure_out:
 			JsonUtils.dump({'failure-location': 'generalized cuachy', 'params': gcp}, failure_out)
-	assert False, "it shouldn't take this many iterations"
+
+	# return s, val, projections, tangent_cone_projections
+	# make_assertion(False, "The generalized Cauchy point calculation shouldn't take this many iterations")
 	return None, None, None, None
 
 
 if __name__ == '__main__':
-	with open(EnvironmentSettings.get_sub_path('failure.json'), 'r') as failure_in:
+	with open(EnvironmentSettings.get_output_path(['gc_failure.json']), 'r') as failure_in:
 		gcp = GeneralizedCauchyParams.parse_json(json.load(failure_in)['params'])
 		gcp.log_failure = False
 		compute_generalized_cauchy_point(gcp)

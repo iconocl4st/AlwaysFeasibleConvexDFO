@@ -1,19 +1,10 @@
 import json
 import os
-import re
-import sys
-
-from algorithm.iteration_result import IterationResult
-from settings import EnvironmentSettings
-import traceback
-
-from trial_problems.simple_problems import TestProblems
-from algorithm.algorithm_state import AlgorithmState
-from algorithm.algorithm import run_algorithm
 
 from hott_schittowski.problems import HottSchittowski
-from rerun import get_state_from
 from run_algorithm import run_problem
+from trial_problems.ht_problem import HottSschittowskiProblem as htp
+from trial_problems.infeasible_strategies import InfeasibleStrategies
 from utils.run_result import RunResult, RunParams
 
 
@@ -27,17 +18,17 @@ def has_converged(result_file):
 	return run_result.status == 'completed' and 'converged' in run_result.status_details
 
 
-def run_on_all_problems(rerun, dry_run):
+def run_on_all_problems(rerun, dry_run, strategy):
 	for ht in HottSchittowski.PROBLEMS:
-		run_on(ht, dry_run, rerun)
+		run_on(strategy, ht, dry_run, rerun)
 
 
-def run_on(ht_problem, rerun, dry_run):
-	if ht_problem.number in [359, 67]:
-		print('TODO: These problems take a long time to run...')
-		return
+def run_on(strategy, ht_problem, rerun, dry_run):
+	# if ht_problem.number in [359, 67]:
+	# 	print('TODO: These problems take a long time to run...')
+	# 	return
 
-	success, test_problem = TestProblems.HottSschittowskiProblem.create_schittowski_problem(ht_problem)
+	success, test_problem = htp.create_schittowski_problem(ht_problem, strategy)
 	if not success:
 		print('Unable to create problem for ' + str(ht_problem.number))
 		return
@@ -52,8 +43,13 @@ def run_on(ht_problem, rerun, dry_run):
 
 
 if __name__ == '__main__':
-	# run_on_all_problems(rerun=False, dry_run=False)
-
+	strategy = InfeasibleStrategies.FailWithNoInformation()
+	if True:
+		run_on_all_problems(rerun=False, dry_run=False, strategy=strategy)
 	# 33, 34, 43, 44, 66, 71, 268
-	for problem_no in [93]:
-		run_on(HottSchittowski.get_problem_by_number(problem_no), rerun=False, dry_run=False)
+	else:
+		for problem_no in [231]:
+			run_on(
+				strategy,
+				HottSchittowski.get_problem_by_number(problem_no),
+				rerun=False, dry_run=False)

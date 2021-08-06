@@ -29,9 +29,7 @@ class Polyhedron:
 		)
 
 	def distance_to_closest_constraint(self, x):
-		return min(
-			np.divide(abs(numpy.dot(self.A, x) - self.b), np.linalg.norm(self.A, axis=1))
-		)
+		return min(np.divide(abs(self.A @ x - self.b), np.linalg.norm(self.A, axis=1)))
 
 	def clone(self):
 		return Polyhedron(np.copy(self.A), np.copy(self.b))

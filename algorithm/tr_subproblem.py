@@ -1,5 +1,6 @@
 import numpy as np
 
+from utils.assertions import make_assertion
 from utils.generalized_cauchy import GeneralizedCauchyParams
 from utils.generalized_cauchy import compute_generalized_cauchy_point
 
@@ -60,7 +61,7 @@ def compute_maximum_scaling(tol, br, ugc):
 	tmax = 1.0
 
 	ret = 0, np.zeros_like(ugc)
-	assert br.is_buffered(np.zeros_like(ugc), tol=tol), 'no scaling possible'
+	make_assertion(br.is_buffered(np.zeros_like(ugc), tol=tol), 'no scaling possible')
 	for _ in range(10000):
 		# point = (1 - tmid) * x + tmid * ugc
 		tmid = (tmax + tmin) / 2.0
@@ -72,7 +73,7 @@ def compute_maximum_scaling(tol, br, ugc):
 			tmax = tmid
 		if tmax - tmin < tol:
 			return ret
-	assert False, 'binary search should have concluded'
+	make_assertion(False, 'binary search should have concluded')
 
 
 def get_hot_starts(state, model, br, ugc):
@@ -106,19 +107,35 @@ def get_hot_starts(state, model, br, ugc):
 		yield BufferedHotStart.create(x_min, br)
 
 
-def project_onto_linearization(state, model):
-	shifted_poly = model.get_all_shifted_constraints()
+def simple_search_for_cauchy(state, model):
+	poly = model.get_all_shifted_constraints()
+
+	search_params = scd.SphereSearchParams()
+	search_params.x0 = (state.sample_region.center - model.x) / model.r
+	search_params.objective = model.shifted_objective.evaluate
+	search_params.sphere_is_feasible = lambda x, r: \
+		poly.contains(x, tolerance=0) and poly.distance_to_closest_constraint(x) >= r
+	if search_params.sphere_is_feasible(search_params.x0, 1e-12):
+		x_min, _ = scd.spherical_descent_search(search_params)
+		return {
+			'gc': x_min,
+			'gc-value': model.shifted_objective.evaluate(x_min),
+		}
+	return {'gc': None, 'gc-value': None}
+
+
+def gc_search_for_cauchy(state, model):
+	shifted_poly = model.get_shifted_model_constraints()
 
 	gcp = GeneralizedCauchyParams()
 	gcp.radius = model.shifted_r
 	gcp.x = model.shifted_x
 	gcp.model = model.shifted_objective
-	gcp.gradient = model.gradient_of_shifted
+	gcp.gradient = model.gradient_of_shifted / model.r
 	gcp.A = shifted_poly.A
 	gcp.b = shifted_poly.b
 	gcp.cur_val = gcp.model.evaluate(gcp.x)
 	gcp.tol = 1e-12
-	gcp.plot_each_iteration = True
 	gcp.plotter = state.plotter
 	gcp.logger = state.logger
 
@@ -127,6 +144,14 @@ def project_onto_linearization(state, model):
 		'gc': projection,
 		'gc-value': model.shifted_objective.evaluate(projection) if projection is not None else None,
 	}
+
+
+def project_onto_linearization(state, model):
+	ret1 = gc_search_for_cauchy(state, model)
+	ret2 = simple_search_for_cauchy(state, model)
+	return ret1 \
+		if ret2['gc'] is None or (ret1['gc'] is not None and ret1['gc-value'] < ret2['gc-value']) \
+		else ret2
 
 
 def solve_tr_subproblem(state, model, br):
@@ -142,7 +167,9 @@ def solve_tr_subproblem(state, model, br):
 	tr_subproblem.radius = model.shifted_r
 	tr_subproblem.ws = br.ws[br.active_indices]
 	tr_subproblem.unit_gradients = model.shifted_A[br.active_indices]
-	assert tr_subproblem.m == 0 or np.max(abs(1 - np.linalg.norm(tr_subproblem.unit_gradients, axis=1))) < 1e-12, 'gradients not normalized'
+	make_assertion(
+		tr_subproblem.m == 0 or np.max(abs(1 - np.linalg.norm(tr_subproblem.unit_gradients, axis=1))) < 1e-12,
+		'gradients not normalized')
 	tr_subproblem.beta = br.bdpb
 	tr_subproblem.objective = model.shifted_objective
 	tr_subproblem.tol = 1e-8
@@ -158,18 +185,15 @@ def solve_tr_subproblem(state, model, br):
 		if not success:
 			print('unable to compute trial step')
 			continue
-		# assert success, 'unable to compute trial step'
-		if np.max(model.shifted_A @ trial - model.shifted_b) > 1e-4:
-			print('trial point is not feasible: ' + str(model.shifted_A @ trial - model.shifted_b))
-			solve_buffered_tr_subproblem(tr_subproblem, state.logger)
-		assert np.max(model.shifted_A @ trial - model.shifted_b) < 1e-4, 'trial point infeasible'
+		# make_assertion(success, 'unable to compute trial step')
+		make_assertion(np.max(model.shifted_A @ trial - model.shifted_b) < 1e-4, 'trial point infeasible')
 
 		state.logger.log_matrix('testing trial point', trial)
 		state.logger.verbose('with value: ' + str(value))
 
 		trial_value.accept(trial, value)
 
-	assert trial_value.x is not None, 'No solution found'
+	make_assertion(trial_value.x is not None, 'No solution found')
 
 	state.logger.log_matrix('minimum trial point', trial_value.x)
 	state.logger.verbose('with value: ' + str(trial_value.value))

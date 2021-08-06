@@ -1,5 +1,6 @@
 import numpy as np
 
+from utils.assertions import make_assertion
 from utils.bounds import Bounds
 from utils.convex_hull import get_convex_hull
 from utils.ellipsoid import Ellipsoid
@@ -75,7 +76,7 @@ def _compute_feasible_direction(A, fci, locations, iterate):
 		return u / np.linalg.norm(u), 1.0
 
 	success, u, theta = find_feasible_direction(A[fci], logger=None)
-	assert success, 'implement me'
+	make_assertion(success, 'implement me')
 
 	if not success:
 		u = np.mean(locations, axis=0) - iterate

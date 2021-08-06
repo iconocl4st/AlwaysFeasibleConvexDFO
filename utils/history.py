@@ -13,6 +13,23 @@ class History:
 		self.sample_regions = []
 		self.outer_trust_regions = []
 
+	def remove_future_evaluations(self, num_iterations):
+		self.evaluations = [
+			[iteration, evaluation]
+			for iteration, evaluation in self.evaluations
+			if iteration <= num_iterations
+		]
+		self.outer_trust_regions = [
+			[iteration, center, radius]
+			for iteration, center, radius in self.outer_trust_regions
+			if iteration <= num_iterations
+		]
+		self.sample_regions = [
+			[iteration, sample_region]
+			for iteration, sample_region in self.sample_regions
+			if iteration <= num_iterations
+		]
+
 	def add_outer_tr(self, iteration, iterate, radius):
 		self.outer_trust_regions.append([iteration, iterate, radius])
 
@@ -20,19 +37,19 @@ class History:
 		self.sample_regions.append([iteration, sample_region])
 
 	def get_minimum_evaluation(self):
-		return min((e for _, e in self.evaluations if e.success), key=lambda x: x.objective, default=None)
+		return min((e for _, e in self.evaluations if e.is_feasible()), key=lambda x: x.objective, default=None)
 
 	def get_successful_num(self):
-		return sum(1 for _, e in self.evaluations if e.success)
+		return sum(1 for _, e in self.evaluations if e.is_feasible())
 
 	def get_unsuccessful_num(self):
-		return sum(1 for _, e in self.evaluations if not e.success)
+		return sum(1 for _, e in self.evaluations if not e.is_feasible())
 
 	def get_evaluations(self, filter_method):
 		return [
 			(idx, evaluation.copy())
 			for idx, (_, evaluation) in enumerate(self.evaluations)
-			if evaluation.success and filter_method(evaluation.x)
+			if evaluation.has_information() and filter_method(evaluation.x)
 		]
 
 	def find_evaluation(self, x):
@@ -88,12 +105,12 @@ class History:
 		successful = np.array([
 			evaluation.x
 			for evaluation in evaluations_to_plot
-			if evaluation.success
+			if evaluation.is_feasible()
 		])
 		unsuccessful = np.array([
 			evaluation.x
 			for evaluation in evaluations_to_plot
-			if not evaluation.success
+			if not evaluation.is_feasible()
 		])
 		title = 'successful=' + str(successful.shape[0]) + ', unsuccessful=' + str(unsuccessful.shape[0])
 		plt = plotter.create_plot('history', b.expand(), title, subfolder)
@@ -106,8 +123,13 @@ class History:
 
 		plt.add_points(successful, label='successful evaluations', color='g', s=50, marker="+")
 		if unsuccessful.shape[0] > 0:
-			plt.add_points(unsuccessful, label='unsuccessful evaluations', color='r', s=20, marker="x")
+			plt.add_points(unsuccessful, label='unsuccessful evaluations', color='r', s=20, marker="o")
 		return plt
+
+	def successful_indices(self):
+		return (
+			[e.objective for _, e in self.evaluations if e.is_feasible()],
+			[idx for idx, (_, e) in enumerate(self.evaluations) if e.is_feasible()])
 
 	def create_plot(self, plotter, subfolder=None, iterations=None, verbose=True):
 		plt = self.create_plot_but_dont_save(plotter, subfolder, iterations, verbose)

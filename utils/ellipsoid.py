@@ -25,8 +25,11 @@ class Ellipsoid:
 		return True
 
 	def contained_within_tr(self, center, radius, tol):
-		if not np.max(np.abs(self.center - center)) < radius:
-			return False
+		try:
+			if not np.max(np.abs(self.center - center)) < radius:
+				return False
+		except:
+			print('here')
 		# from utils.polyhedron import Polyhedron
 		# poly = Polyhedron.create_from_linf_tr(center, radius)
 		qinv = self.r ** 2 * self.qinv / 2.0

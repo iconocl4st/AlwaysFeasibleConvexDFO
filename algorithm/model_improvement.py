@@ -1,12 +1,14 @@
 import numpy as np
 
+from utils.assertions import make_assertion
+from utils.default_stringable import DefaultStringable
 from utils.ellipsoid import Ellipsoid
 from utils.lagrange import LagrangeParams, perform_lu_factorization
 from utils.polyhedron import Polyhedron
 from utils.quadratic import Quadratic
 
 
-class Model:
+class Model(DefaultStringable):
 	def __init__(self):
 		self.sample = None
 
@@ -86,7 +88,7 @@ def improve_geometry(state):
 	state.logger.start_step('improving geometry')
 	filter_method = {
 		'trust-region-radius': lambda x: (
-			np.linalg.norm(x - state.current_iterate) < 1.5 * state.outer_tr_radius or
+			np.linalg.norm(x - state.current_iterate) < 2.5 * state.outer_tr_radius or
 			state.sample_region.contains(x)
 		)
 	}[state.params.sample_point_filter]
@@ -105,7 +107,7 @@ def improve_geometry(state):
 	state.logger.verbose(
 		'Performing LU factorization on ' + str(len(lparams.evaluations)) + ' points.')
 	certification = perform_lu_factorization(lparams)
-	assert certification.success, 'Unable to improve geometry'
+	make_assertion(certification.success, 'Unable to improve geometry')
 
 	state.logger.stop_step()
 	return certification
@@ -120,13 +122,16 @@ def create_sr_shifted_models(state, cert, sr):
 		point = sr.unshift_point(unshifted)
 		if idx < 0:
 			evaluation = state.evaluate(point)
-			if not evaluation.success:
+			if not evaluation.has_information():
 				state.logger.info('attempted to evaluate infeasible sample point: ' + str(evaluation.x))
 				state.logger.stop_step()
 				return False, None, None, None
 		else:
 			evaluation = state.history.get_evaluation(idx)
-			assert np.linalg.norm(point - evaluation.x) / max(1.0, np.linalg.norm(point)) < 1e-12, 'incorrect index of evaluation'
+			make_assertion(
+				np.linalg.norm(point - evaluation.x) / max(1.0, np.linalg.norm(point)) < 1e-12,
+				'incorrect index of evaluation')
+			make_assertion(evaluation.has_information(), 'attempting to use evaluation with no information')
 		sample.append(evaluation)
 
 		f_quad += quad * evaluation.objective
@@ -256,30 +261,31 @@ def update_model(state, cert):
 	return model
 
 
-def assert_model_accuracy(model, sample, values):
+def _model_accuracy(model, sample, values):
 	for point, expected_value in zip(sample, values):
 		actual_value = model.evaluate(point)
-		assert np.abs(actual_value - expected_value) / max(1.0, np.abs(actual_value)) < 1e-4, \
-			'model polynomial does not agree on sample, expected: ' + \
-			str(expected_value) + ', found: ' + str(actual_value)
+		agreement = np.abs(actual_value - expected_value) / max(1.0, np.abs(actual_value)) < 1e-4
+		make_assertion(agreement,
+			'model polynomial does not agree on sample, expected: ' +
+			str(expected_value) + ', found: ' + str(actual_value))
 
 
 def ensure_model_accuracy(state, model, evaluations, f_poly, c_polys):
 	points = np.array([e.x for e in evaluations])
 
-	assert_model_accuracy(model.unshifted_objective, points, [e.objective for e in evaluations])
+	_model_accuracy(model.unshifted_objective, points, [e.objective for e in evaluations])
 	for idx, poly in enumerate(model.unshifted_constraints):
-		assert_model_accuracy(poly, points, [e.constraints[idx] for e in evaluations])
+		_model_accuracy(poly, points, [e.constraints[idx] for e in evaluations])
 
 	inner_shifted_points = state.sample_region.shift_sample(points)
-	assert_model_accuracy(f_poly, inner_shifted_points, [e.objective for e in evaluations])
+	_model_accuracy(f_poly, inner_shifted_points, [e.objective for e in evaluations])
 	for idx, poly in enumerate(c_polys):
-		assert_model_accuracy(poly, inner_shifted_points, [e.constraints[idx] for e in evaluations])
+		_model_accuracy(poly, inner_shifted_points, [e.constraints[idx] for e in evaluations])
 
 	outer_shifted_points = (points - model.x) / model.r
-	assert_model_accuracy(model.shifted_objective, outer_shifted_points, [e.objective for e in evaluations])
+	_model_accuracy(model.shifted_objective, outer_shifted_points, [e.objective for e in evaluations])
 	for idx, poly in enumerate(model.shifted_constraints):
-		assert_model_accuracy(poly, outer_shifted_points, [e.constraints[idx] for e in evaluations])
+		_model_accuracy(poly, outer_shifted_points, [e.constraints[idx] for e in evaluations])
 
 	for _ in range(100):
 		x = state.current_iterate + 2 * np.random.random() - 1
