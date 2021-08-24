@@ -797,7 +797,7 @@ class HockSchittkowski:
 			initial=Initial(x0=a([0, 0, 0, 0, 1]), f0=20, is_feasible=True),
 			solution=Solution(xstar=a([0.3, 0.33346761, 0.4, 0.42831010, 0.22396487]), fstar=-32.34867897, rstar=0)
 		),
-		# TODO: Skipped 87-92 are not feasible
+		# TODO: 87-92 are not feasible
 		Problem(
 			number=93,
 			name='transformer design',
@@ -828,7 +828,7 @@ class HockSchittkowski:
 			initial=Initial(x0=a([1, 2, 0, 4, 0, 1, 1]), f0=714, is_feasible=True),
 			solution=Solution(xstar=a([2.330499, 1.951372, -0.4775414, 4.365726, -0.6244870, 1.038131, 1.594227]), fstar=680.6300573, rstar=0)
 		),
-		# TODO: Skipped 101-104 are not feasible
+		# TODO: 101-104 are not feasible
 		Problem(
 			number=105,
 			name='maximum-likelihood estimation',

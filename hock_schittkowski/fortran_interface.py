@@ -8,21 +8,6 @@ python -m numpy.f2py -c $SCHIT_SRC_LOCATION/PROB.FOR $SCHIT_SRC_LOCATION/CONV.FO
 
 '''
 
-'''
-schit.l4.gf
-schit.l5.gg
-
-schit.l9.index1
-schit.l10.index2
-'''
-
-
-
-'''
-Problem 71: It says Nex is 0, but it still has a solution...
-
-
-'''
 
 class ProblemEvaluation:
 	def __init__(self):

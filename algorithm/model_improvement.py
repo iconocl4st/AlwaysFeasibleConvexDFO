@@ -88,7 +88,7 @@ def improve_geometry(state):
 	state.logger.start_step('improving geometry')
 	filter_method = {
 		'trust-region-radius': lambda x: (
-			np.linalg.norm(x - state.current_iterate) < 2.5 * state.outer_tr_radius or
+			np.linalg.norm(x - state.current_iterate) < 1.5 * state.outer_tr_radius or
 			state.sample_region.contains(x)
 		)
 	}[state.params.sample_point_filter]
@@ -166,50 +166,6 @@ def update_model(state, cert):
 	model.shifted_constraints = [
 		c_quad.compose(sr.l, (sr.center - model.x) / model.r, sr.r / model.r)
 		for c_quad in c_quads]
-
-	# tr = model
-
-	# s = np.random.random(2)
-	# x = model.x + model.r * s
-	# print('s=', s)
-	# print('x=', x)
-	# print('u=', sr.l @ (x - sr.center) / sr.r)
-	# print('u=', sr.l @ (tr.x + tr.r * s - sr.center) / sr.r)
-	# print('u=', sr.l @ (tr.r * s - (sr.center - tr.x)) / sr.r)
-	# print('u=', sr.l @ (s - (sr.center - tr.x) / tr.r) / (sr.r / tr.r))
-	# u = sr.l @ (s - (sr.center - tr.x) / tr.r) / (sr.r / tr.r)
-	# print('x=', sr.center + sr.r * sr.linv @ u)
-	#
-	# print(f_quad.evaluate(u))
-	# print(model.unshifted_objective.evaluate(x))
-	# print(model.shifted_objective.evaluate(s))
-
-	# u = sr.l @ (x - sr.c) / sr.r
-	# s = (x - tr.c) / tr.r
-	# 	x = tr.c + tr.r * s
-	# u = sr.l @ (tr.c + tr.r * s - sr.c) / sr.r
-	# u = sr.l @ (tr.r * s - (sr.c - tr.c)) / sr.r
-	# u = sr.l @ (s - (sr.c - tr.c) / tr.r) / (sr.r / tr.r)
-
-	# u = sr.l @ (x - sr.c) / sr.r
-	# ==> x = sr.c + sr.r * sr.linv @ u
-	# s = (x - tr.c) / tr.r
-	# ==> s = (sr.c + sr.r * sr.linv @ u - tr.c) / tr.r
-	# ==> s = sr.r * (sr.linv @ u - (tr.c - sr.c) / sr.r) / tr.r
-	# ==> s = (sr.linv @ u - (tr.c - sr.c) / sr.r) / (tr.r / sr.r)
-	# ==> s = (sr.r / tr.r) * sr.linv @ u - (tr.c - sr.c) / tr.r
-
-	# f1 = c + b @ s + s @ q @ s
-	# \nabla f1 = b + 2 * q @ s
-	# f2 = c + b @ (l @ (x - c)) / r + (l @ (x - c)) @ q @ (l @ (x - c)) / r ** 2
-	# \nabla f2 = b @ l / r + 2 l.T @ q @ l @ (x - c) / r ** 2
-
-
-	# sr_gradient = f_quad.evaluate_gradient(np.zeros(n))
-	# unshifted_gradient1 = model.unshifted_objective.evaluate_gradient(state.current_iterate)
-	# quad = f_quad
-	# unshifted_gradient2 = quad.g @ sr.l / sr.r + 2 * sr.l.T @ quad.Q @ sr.l @ (state.current_iterate - sr.center) / sr.r ** 2
-	# f3 = c + b @ (x - c) / r + (x - c) @ q @ (x - c) / r ** 2
 
 	model.unshifted_gradient = model.unshifted_objective.evaluate_gradient(state.current_iterate)
 	model.gradient_of_shifted = model.shifted_objective.evaluate_gradient(zeros)

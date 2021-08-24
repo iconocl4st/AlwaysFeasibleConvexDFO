@@ -5,7 +5,10 @@ Specifically, this algorithm is designed to maintain feasibility of iterates and
 
 <hr>
 
+## Installing Dependencies
 
+
+### Anaconda
 This code uses the anaconda software library https://www.anaconda.com/.
 Installing Anaconda will allow you to install the required dependencies:
 
@@ -13,9 +16,34 @@ Installing Anaconda will allow you to install the required dependencies:
 conda install -c conda-forge pyomo matplotlib scipy ipopt cython
 ```
 
-Also, we use pdf available at https://www.pdfo.net/:
+### PDFO
 
+Also, we use pdfo which is available at https://www.pdfo.net/:
+
+```
 python -m pip install pdfo
+```
+
+This library implements derivative-free algorithms created M. J. D. Powell.
+
+
+### NOMAD
+
+NOMAD is a direct-search, derivative-free algorithm available at https://www.gerad.ca/nomad/.
+This library must be compiled to be called from within our algorithm.
+
+
+### Hock-Schittkowski
+
+We implemented a wrapper around the Hock-Schittkowski test problems for non-linear optimization.
+The problem set is described in https://www.springer.com/gp/book/9783540105619.
+The source code can be downloaded from http://klaus-schittkowski.de/downloads.htm.
+
+After the source is downloaded, it can be built within the schittkoski_library Makefile.
+
+
+### Configuration
+
 
 Once installed, please modify settings.py to direct the algorithm's output to the desired directory.
 Set OUTPUT_DIRECTORY to the location you would like to view results and iteration plots in.
@@ -24,9 +52,7 @@ Set SCHITTKOWSKI_LIBRARY to the location you compiled the Fortran library.
 
 
 
-
-
-
+## Organization
 
 The code is roughly organized as follows:
 
