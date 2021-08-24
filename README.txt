@@ -1,3 +1,5 @@
+This is an Algorithm for solving constrained derivative-free optimization problems.
+Specifically, this algorithm is designed to maintain feasibility of iterates and sample points.
 
 
 This code uses the anaconda software library https://www.anaconda.com/.
