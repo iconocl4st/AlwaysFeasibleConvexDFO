@@ -46,9 +46,9 @@ After the source is downloaded, it can be built within the schittkoski_library M
 
 
 Once installed, please modify settings.py to direct the algorithm's output to the desired directory.
-Set OUTPUT_DIRECTORY to the location you would like to view results and iteration plots in.
-Set IP_OPT to the location of the ipopt executable installed through Anaconda.
-Set SCHITTKOWSKI_LIBRARY to the location you compiled the Fortran library.
+- Set OUTPUT_DIRECTORY to the location you would like to view results and iteration plots in.
+- Set IP_OPT to the location of the ipopt executable installed through Anaconda.
+- Set SCHITTKOWSKI_LIBRARY to the location you compiled the Fortran library.
 
 
 
