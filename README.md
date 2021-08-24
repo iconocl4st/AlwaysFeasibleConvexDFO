@@ -63,11 +63,11 @@ there are two subfolders for different variants of the sample region and trust r
 
 driver/
 This contains the files to call the algorithm on with different parameters
-run_hock_schittkowski.py runs our algorithm on the hock-schittkowski problem set.
-compare_schittkowski.py compares our library implementation to the 2011 Fortran code.
-create_history.py creates a plot of the evaluations for a particular run
-create_performance_plot.py creates a performance plot for all output directories in an output folder (the folder must be edited)
-run_nomad.py, run_pdfo.py, and run_schipy.py run other libraries on the hock-schittkowski problem set
+- run_hock_schittkowski.py runs our algorithm on the hock-schittkowski problem set.
+- compare_schittkowski.py compares our library implementation to the 2011 Fortran code.
+- create_history.py creates a plot of the evaluations for a particular run
+- create_performance_plot.py creates a performance plot for all output directories in an output folder (the folder must be edited)
+- run_nomad.py, run_pdfo.py, and run_schipy.py run other libraries on the hock-schittkowski problem set
 
 
 hock_schittkowski/
