@@ -1,5 +1,9 @@
+# Always Feasible DFO
+
 This is an Algorithm for solving constrained derivative-free optimization problems.
 Specifically, this algorithm is designed to maintain feasibility of iterates and sample points.
+
+<hr>
 
 
 This code uses the anaconda software library https://www.anaconda.com/.
