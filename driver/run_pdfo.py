@@ -5,8 +5,8 @@ from pdfo import NonlinearConstraint
 
 import traceback
 
-from hott_schittowski.problems import HottSchittowski
-from trial_problems.ht_problem import HottSschittowskiProblem
+from hock_schittkowski.problems import HockSchittkowski
+from trial_problems.ht_problem import HockSchittkowskiProblem
 from trial_problems.infeasible_strategies import InfeasibleStrategies
 from utils.json_utils import JsonUtils
 from utils.run_result import RunResult, RunParams
@@ -26,7 +26,7 @@ def create_constraint(problem, index):
 
 def run_on(ht_problem):
 	strategy = InfeasibleStrategies.FailWithGarbage()
-	success, problem = HottSschittowskiProblem.create_schittowski_problem(ht_problem, strategy)
+	success, problem = HockSchittkowskiProblem.create_schittkowski_problem(ht_problem, strategy)
 	if not success:
 		return
 
@@ -69,7 +69,7 @@ def run_on(ht_problem):
 
 
 def run_on_all_problems():
-	for ht in HottSchittowski.PROBLEMS:
+	for ht in HockSchittkowski.PROBLEMS:
 		try:
 			run_on(ht)
 		except:

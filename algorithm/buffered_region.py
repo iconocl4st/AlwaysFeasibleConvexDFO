@@ -4,6 +4,7 @@ from pyomo_opt.feasible_direction import find_feasible_direction
 from utils.assertions import make_assertion
 from utils.bounds import Bounds
 from utils.default_stringable import DefaultStringable
+from utils.logger import Logger
 from utils.polyhedron import Polyhedron
 from utils.project_onto_cone import project_onto_edge_of_cone
 from utils.project_onto_cone import sphere_is_contained_within_cone
@@ -60,6 +61,11 @@ class Cone(DefaultStringable):
 	def contains_sphere(self, center, radius):
 		return sphere_is_contained_within_cone(
 			self.vertex, self.open_direction, self.open_width, center, radius)[0]
+
+	def get_distance_to(self, point):
+		_, distance, feasible = project_onto_edge_of_cone(
+			self.vertex, self.open_direction, self.open_width, point)
+		return feasible, distance
 
 	def decompose(self, x, tol=1e-12):
 		s = x - self.vertex
@@ -207,15 +213,28 @@ def compute_buffering_cones(state, model):
 	gradient_norms = np.linalg.norm(gradients, axis=1)
 	constraint_values = np.array([ci.evaluate(model.shifted_x) for ci in model.shifted_constraints])
 
+	if np.any(np.logical_and(abs(constraint_values) <= 1e-8, abs(gradient_norms) <= 1e-8)):
+		state.logger.log_matrix('constraint values', constraint_values, Logger.INFO)
+		state.logger.log_matrix('constraint gradient norms', gradient_norms, Logger.INFO)
+		state.logger.info('irregularity detected')
+		br.regular = False
+		return br
+
+
 	zs = []
 	for i in range(state.num_constraints):
-		if abs(constraint_values[i]) < 1e-12:
+		if abs(constraint_values[i]) < 1e-8:
 			zs.append(model.shifted_x)
-		elif abs(gradient_norms[i]) > 1e-12:
+		elif abs(gradient_norms[i]) > 1e-8:
 			z = -constraint_values[i] / gradient_norms[i] ** 2 * gradients[i]
 			zs.append(z)
-			make_assertion(abs(constraint_values[i] + gradients[i] @ z) < 1e-8, 'could not compute zero of constraint')
-			make_assertion(abs(model.shifted_A[i] @ z - model.shifted_b[i]) < 1e-8, 'zeros of linearizations did not match')
+			if abs(model.shifted_A[i] @ z - model.shifted_b[i]) > 1e-8:
+				state.logger.log_matrix('failure in model', gradients, Logger.INFO)
+				state.logger.log_matrix('failure in model', constraint_values, Logger.INFO)
+				print('the error in the linearization is large...')
+
+			make_assertion(abs(constraint_values[i] + gradients[i] @ z) < 1e-4, 'could not compute zero of constraint')
+			make_assertion(abs(model.shifted_A[i] @ z - model.shifted_b[i]) < 1e-4, 'zeros of linearizations did not match')
 		else:
 			zs.append([np.nan] * state.dim)
 	br.zs = np.array(zs)

@@ -6,7 +6,7 @@ import os
 
 from settings import EnvironmentSettings
 from utils.plotting import Plotting
-from visualizations.visualize_hott_schittowski import add_problem_to_plot
+from visualizations.visualize_hock_schittkowski import add_problem_to_plot
 from visualizations.visualize_runs import generate_table
 import utils.performance as perf
 

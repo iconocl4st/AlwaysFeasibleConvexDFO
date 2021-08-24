@@ -262,19 +262,20 @@ def perform_lu_factorization(params):
 		for idx in range(c.basis_dimension):
 			x = c.current_sample[idx]
 			val = poly.evaluate(x)
+			TOL = 1e-6
 			if i == idx:
-				assert np.abs(1.0 - val) < 1e-8, 'lagrange polynomial failed to be one at its own point' \
+				assert np.abs(1.0 - val) < TOL, 'lagrange polynomial failed to be one at its own point' \
 					', found: ' + str(val)
 			else:
-				assert np.abs(val) < 1e-8, 'lagrange polynomial failed to be zero at another point' \
+				assert np.abs(val) < TOL, 'lagrange polynomial failed to be zero at another point' \
 					', found: ' + str(val)
 
 			val = quad.evaluate(x)
 			if i == idx:
-				assert np.abs(1.0 - val) < 1e-8, 'lagrange polynomial failed to be one at its own point' \
+				assert np.abs(1.0 - val) < TOL, 'lagrange polynomial failed to be one at its own point' \
 					', found: ' + str(val)
 			else:
-				assert np.abs(val) < 1e-8, 'lagrange polynomial failed to be zero at another point' \
+				assert np.abs(val) < TOL, 'lagrange polynomial failed to be zero at another point' \
 					', found: ' + str(val)
 
 		if params.plot_maximizations:

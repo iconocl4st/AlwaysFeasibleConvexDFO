@@ -65,4 +65,6 @@ def continue_from(iterations_directory):
 
 if __name__ == '__main__':
 	continue_from(
-		'/home/thallock/Pictures/ConvexConstraintsOutput/runs/215_always_feasible_no_params/iteration_json')
+		'/home/thallock/Pictures/ConvexConstraintsOutput/runs/' +
+		'215_always_feasible_linear' +
+		'/iteration_json')

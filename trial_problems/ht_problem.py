@@ -8,10 +8,10 @@ from trial_problems.infeasible_strategies import InfeasibleStrategies
 from utils.assertions import make_assertion
 from utils.finite_difference import find_feasible_start
 
-from hott_schittowski.problems import HottSchittowski
+from hock_schittkowski.problems import HockSchittkowski
 
 
-class HottSschittowskiProblem(BaseProblem):
+class HockSchittkowskiProblem(BaseProblem):
 	def __init__(self, inf_strategy, problem, q, r, center, constraints):
 		super().__init__(inf_strategy)
 		self.problem = problem
@@ -20,12 +20,14 @@ class HottSschittowskiProblem(BaseProblem):
 		self.center = center
 		self.constraints = constraints
 
+		make_assertion(center is not None, 'center is none for problem ' + str(problem.number))
+
 	@property
 	def n(self):
 		return len(self.center)
 
 	def get_name(self):
-		return 'hott_schittowski_' + str(self.problem.number)
+		return 'hock_schittkowski_' + str(self.problem.number)
 
 	@property
 	def num_constraints(self):
@@ -61,25 +63,25 @@ class HottSschittowskiProblem(BaseProblem):
 
 	def to_json(self):
 		return {
-			'type': 'hott-schittowski',
+			'type': 'hock-schittkowski',
 			'problem-number': self.problem.number,
 			'strategy': self.inf_strategy
 		}
 
 	@staticmethod
 	def parse_json(json):
-		if json['type'] != 'hott-schittowski':
+		if json['type'] != 'hock-schittkowski':
 			raise Exception('Unrecognized problem type: ' + str(json['type']))
-		ht_problem = HottSchittowski.get_problem_by_number(json['problem-number'])
+		ht_problem = HockSchittkowski.get_problem_by_number(json['problem-number'])
 		strategy = InfeasibleStrategies.parse_json(json['strategy'])
-		success, problem = HottSschittowskiProblem.create_schittowski_problem(ht_problem, strategy)
-		make_assertion(success, 'unable to create hott schittowski problem ' + str(json['problem-number']))
+		success, problem = HockSchittkowskiProblem.create_schittkowski_problem(ht_problem, strategy)
+		make_assertion(success, 'unable to create hock schittkowski problem ' + str(json['problem-number']))
 		return problem
 
 
 	@staticmethod
-	def create_schittowski_problem(problem, strategy):
-		if problem.n > 10:
+	def create_schittkowski_problem(problem, strategy):
+		if problem.n >= 10:
 			return False, None
 		if not problem.initial.is_feasible:
 			return False, None
@@ -96,7 +98,7 @@ class HottSschittowskiProblem(BaseProblem):
 			print('unable to find feasible start for problem number', problem.number)
 			traceback.print_exc()
 			raise
-		# if not success:
-		# 	return False, None
+		if not success or center is None:
+			return False, None
 
-		return True, HottSschittowskiProblem(strategy, problem, q, r, center, constraints)
+		return True, HockSchittkowskiProblem(strategy, problem, q, r, center, constraints)

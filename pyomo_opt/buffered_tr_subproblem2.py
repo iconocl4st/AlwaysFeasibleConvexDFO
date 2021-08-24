@@ -13,6 +13,19 @@ from utils.polyhedron import Polyhedron
 from pyomo_opt.project import project
 
 
+class TrustRegionSubproblem:
+	def __init__(self):
+		self.m = None
+		self.n = None
+		self.x = None
+		self.radius = None
+		self.ws = None
+		self.beta = None
+		self.objective = None
+		self.unit_gradients = None
+		self.hotstart = None
+
+
 def solve_buffered_tr_subproblem(br_model, logger):
 	n = br_model.n
 	m = br_model.m

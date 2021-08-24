@@ -5,8 +5,8 @@ import sys
 import traceback
 import numpy as np
 
-from hott_schittowski.problems import HottSchittowski
-from trial_problems.ht_problem import HottSschittowskiProblem
+from hock_schittkowski.problems import HockSchittkowski
+from trial_problems.ht_problem import HockSchittkowskiProblem
 from trial_problems.infeasible_strategies import InfeasibleStrategies
 from utils.assertions import make_assertion
 from utils.json_utils import JsonUtils
@@ -15,10 +15,10 @@ from utils.run_result import RunParams
 
 
 class PyNomadParams:
-	def __init__(self, ht_problem):
+	def __init__(self, ht_problem, num_constraints):
 		self.display_degree = 0
 		self.stats_file = 'stats.txt'
-		self.output_type = 'OBJ PB EB'
+		self.output_type = 'OBJ ' + ' '.join(['EB'] * num_constraints)
 		self.max_evaluations = 10000
 		self.max_time = 60
 		self.lbs = ht_problem.bounds.nomad_lb()
@@ -52,7 +52,7 @@ def get_bb(problem, history):
 			evaluation = problem.evaluate(npX)
 			history.add_evaluation(-1, evaluation)
 
-			x.set_bb_output(0, ht_problem.objective(npX))
+			x.set_bb_output(0, evaluation.objective)
 			for idx, c_value in enumerate(evaluation.constraints):
 				x.set_bb_output(idx + 1, c_value)
 			return 0 if evaluation.failure else 1
@@ -64,7 +64,7 @@ def get_bb(problem, history):
 
 
 def run_hott_schittowski_problem(ht_problem, strategy):
-	success, problem = HottSschittowskiProblem.create_schittowski_problem(ht_problem, strategy)
+	success, problem = HockSchittkowskiProblem.create_schittkowski_problem(ht_problem, strategy)
 	if not success:
 		return
 
@@ -80,7 +80,7 @@ def run_hott_schittowski_problem(ht_problem, strategy):
 	with open(result_file, 'w') as output:
 		JsonUtils.dump(run_result, output)
 
-	params = PyNomadParams(ht_problem)
+	params = PyNomadParams(ht_problem, problem.num_constraints)
 	print(ht_problem.number, ht_problem.n, strategy)
 	try:
 		output = PyNomad.optimize(
@@ -104,12 +104,12 @@ if __name__ == '__main__':
 		problem_num = int(sys.argv[-2])
 		strategy_str = sys.argv[-1]
 	except:
-		problem_num = 215
+		problem_num = 24
 		strategy_str = InfeasibleStrategy.FAIL_WITH_NO_INFORMATION
 		print('no problem specified')
 
 	strategy = InfeasibleStrategies.get_infeasible_strategy(strategy_str)
-	ht_problem = HottSchittowski.get_problem_by_number(problem_num)
+	ht_problem = HockSchittkowski.get_problem_by_number(problem_num)
 	if ht_problem is not None:
 		run_hott_schittowski_problem(ht_problem, strategy)
 

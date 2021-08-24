@@ -41,7 +41,7 @@ class EnvironmentSettings:
 	# SOLVER_PATH = '/home/thallock/Applications/cplex/cplex/bin/x86-64_linux/cplex'
 
 
-	SCHITTOWSKI_LIBRARY = '/work/research/schittowski_library/install'
+	SCHITTKOWSKI_LIBRARY = '/work/research/schittowski_library/install'
 
 	@staticmethod
 	def remove_files(root):

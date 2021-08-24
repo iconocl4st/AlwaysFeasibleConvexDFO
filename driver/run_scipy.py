@@ -1,7 +1,7 @@
 import scipy.optimize
 
-from hott_schittowski import problems
-from trial_problems.ht_problem import HottSschittowskiProblem
+from hock_schittkowski import problems
+from trial_problems.ht_problem import HockSchittkowskiProblem
 from trial_problems.infeasible_strategies import InfeasibleStrategies
 
 import traceback
@@ -9,7 +9,7 @@ import numpy as np
 
 import scipy.optimize
 
-from hott_schittowski.problems import HottSchittowski
+from hock_schittkowski.problems import HockSchittkowski
 from utils.json_utils import JsonUtils
 from utils.run_result import RunResult
 from utils.run_result import RunParams
@@ -40,7 +40,7 @@ def ensure_bounds(b, dim):
 
 
 def run_scipy(ht_problem, params, strategy):
-	success, problem = HottSschittowskiProblem.create_schittowski_problem(ht_problem, strategy)
+	success, problem = HockSchittkowskiProblem.create_schittkowski_problem(ht_problem, strategy)
 	if not success:
 		return
 
@@ -95,8 +95,6 @@ if __name__ == '__main__':
 		# 'method': 'Powell',
 	})
 	strategy = InfeasibleStrategies.Succeed()
-	for ht_problem in HottSchittowski.PROBLEMS:
-		if ht_problem.number == 67:
-			continue
+	for ht_problem in HockSchittkowski.PROBLEMS:
 		run_scipy(ht_problem, run_params, strategy)
 

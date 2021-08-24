@@ -8,7 +8,7 @@ from settings import EnvironmentSettings
 from utils.json_utils import JsonUtils
 
 
-def run_problem(run_result, problem, dry_run):
+def run_problem(run_result, problem, dry_run, user_params=None):
 	output_folder = run_result.get_output_folder()
 	result_file = run_result.get_result_file()
 
@@ -19,7 +19,7 @@ def run_problem(run_result, problem, dry_run):
 		run_result.ensure_output_directory()
 		EnvironmentSettings.remove_files(output_folder)
 
-		state = AlgorithmState.create(problem, output_folder)
+		state = AlgorithmState.create(problem, output_folder, user_params)
 		it_result = run_algorithm(state)
 		print(it_result)
 		# state.logger.info_json('history', state.history)

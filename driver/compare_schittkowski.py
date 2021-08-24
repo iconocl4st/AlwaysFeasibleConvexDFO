@@ -1,8 +1,8 @@
 
 import numpy as np
 import sys
-from hott_schittowski.problems import HottSchittowski, Data
-from hott_schittowski.fortran_interface import create_problem_description
+from hock_schittkowski.problems import HockSchittkowski, Data
+from hock_schittkowski.fortran_interface import create_problem_description
 
 
 def bound_cmp(x, y):
@@ -122,7 +122,7 @@ def compare_implementation(problem):
 
 
 def compare_all_implementations():
-	for problem in HottSchittowski.PROBLEMS:
+	for problem in HockSchittkowski.PROBLEMS:
 		# try:
 		compare_implementation(problem)
 		# except:
@@ -137,7 +137,7 @@ if __name__ == '__main__':
 		compare_all_implementations()
 	else:
 		problem_num = int(sys.argv[-1])
-		problem = HottSchittowski.get_problem_by_number(problem_num)
+		problem = HockSchittkowski.get_problem_by_number(problem_num)
 		compare_implementation(problem)
 
 

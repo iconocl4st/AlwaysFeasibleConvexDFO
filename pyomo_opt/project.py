@@ -9,6 +9,7 @@ from io import StringIO
 
 from pyomo_opt.common import SOLVER_NAME
 from pyomo_opt.common import SOLVER_PATH
+from utils.stochastic_search import stochastic_projection
 
 
 def project(x0, A, b, logger=None, hotstart=None, tol=None):
@@ -16,7 +17,14 @@ def project(x0, A, b, logger=None, hotstart=None, tol=None):
 	m = A.shape[0]
 	opt = SolverFactory(SOLVER_NAME, executable=SOLVER_PATH)
 	if hotstart is not None:
+		if np.all(A @ hotstart <= b + tol):
+			opt.options['warm_start_init_point'] = 'yes'
+		else:
+			hotstart = None
+	if hotstart is None and np.all(A @ np.zeros(n) <= b + (tol if tol is not None else 0)):
+		hotstart = np.zeros(n)
 		opt.options['warm_start_init_point'] = 'yes'
+
 	if tol is not None:
 		opt.options['tol'] = tol
 	model = ConcreteModel()
@@ -39,7 +47,13 @@ def project(x0, A, b, logger=None, hotstart=None, tol=None):
 		result = opt.solve(model, tee=False)
 	except:
 		print('unable to project...')
-		raise
+		# raise
+		# Instead, resort to a simpler, non-pyomo search...
+		trial_value = stochastic_projection(x0, A, b, tol)
+		if trial_value is None:
+			return False, None, None
+		else:
+			return trial_value.trial is not None, trial_value.trial, trial_value.value
 
 	if logger is not None:
 		string_stream = StringIO()

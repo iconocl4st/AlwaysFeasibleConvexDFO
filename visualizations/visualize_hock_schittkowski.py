@@ -5,7 +5,7 @@ from settings import EnvironmentSettings
 from utils.ellipsoid import Ellipsoid
 from utils.plotting import Plotting
 from utils.bounds import Bounds
-from hott_schittowski.problems import HottSchittowski
+from hock_schittkowski.problems import HockSchittkowski
 from utils.finite_difference import find_feasible_start
 
 
@@ -26,10 +26,13 @@ def add_problem_to_plot(problem, plt):
 	plt.add_point(problem.initial.x0, label='initial-point', color='red')
 
 
-def plot_hott_schittowski_problem(problem):
+def plot_hock_schittkowski_problem(problem):
 	if problem.n != 2:
 		return False
-	filename = EnvironmentSettings.get_output_path(['visualizations', 'schittowski', str(problem.number) + '_.png'])
+	filename = EnvironmentSettings.get_output_path([
+		'visualizations',
+		'schittowski',
+		str(problem.number).rjust(3, '0') + '_.png'])
 	os.makedirs(os.path.dirname(filename), exist_ok=True)
 
 	bounds = Bounds() \
@@ -60,10 +63,7 @@ def plot_hott_schittowski_problem(problem):
 
 
 if __name__ == '__main__':
-	for problem in HottSchittowski.PROBLEMS:
-	# for problem in [HottSchittowski.get_problem_by_number(332)]:
-		# try:
+	for problem in HockSchittkowski.PROBLEMS:
+	# for problem in [HottSchittowski.get_problem_by_number(30)]:
 		print('problem:', problem.number)
-		plot_hott_schittowski_problem(problem)
-		# except:
-		# 	print('unable to plot problem ' + str(problem.number), sys.exc_info())
+		plot_hock_schittkowski_problem(problem)

@@ -478,10 +478,10 @@ class Data:
 	p359_d = p359_data[:, 3]
 
 
-class HottSchittowski:
+class HockSchittkowski:
 	@staticmethod
 	def get_problem_by_number(number):
-		for problem in HottSchittowski.PROBLEMS:
+		for problem in HockSchittkowski.PROBLEMS:
 			if problem.number == number:
 				return problem
 		return None
@@ -2007,7 +2007,7 @@ class HottSchittowski:
 
 
 if __name__ == '__main__':
-	for problem in HottSchittowski.PROBLEMS:
+	for problem in HockSchittkowski.PROBLEMS:
 		print('problem', problem.number)
 		assert problem.n == len(problem.initial.x0)
 		assert problem.n == len(problem.solution.xstar)

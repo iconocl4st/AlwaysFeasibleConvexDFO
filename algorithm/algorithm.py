@@ -1,19 +1,16 @@
 import os
 
-import numpy as np
-
-import algorithm.sample_region
 from algorithm.criticality import check_criticality
 from algorithm.iteration_result import IterationResult
 from algorithm.model_improvement import improve_geometry, update_model
 from algorithm.buffered_region import compute_buffering_cones
-from algorithm.sample_region import repair_sample_region, scale_sample_region, construct_sample_region
+from algorithm.sample_regions.recovered import repair_sample_region
+from algorithm.sample_regions.scaled import scale_sample_region
+from algorithm.sample_regions.sample_region import construct_sample_region
 from algorithm.test_improvement import test_for_improvement
-from algorithm.tr_subproblem import solve_tr_subproblem
-from settings import EnvironmentSettings
+from algorithm.tr_subproblem.solve_tr_subproblem import solve_tr_subproblem
 from utils.bounds import Bounds
 from utils.json_utils import JsonUtils
-from utils.polyhedron import Polyhedron
 
 
 def begin_iteration(state):
@@ -132,7 +129,6 @@ def run_iteration(state):
 		tr_solution = solve_tr_subproblem(state, model, buffered_region)
 		it_result = test_for_improvement(state, model, tr_solution)
 		return end_iteration(state, it_result, model, buffered_region)
-
 
 		# TODO: set the next bounded_radius....
 	finally:

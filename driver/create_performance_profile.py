@@ -119,11 +119,12 @@ def create_performance_profile(root_directory):
 			perf.get_performance(
 				run_result.history, perf.PerformancePlotType.ALL))
 
-	performance_path = EnvironmentSettings.get_output_path(['results', 'performance_profile.png'])
+	performance_path = EnvironmentSettings.get_output_path(['results', 'nonlinear_performance_profile.png'])
 	os.makedirs(os.path.dirname(performance_path), exist_ok=True)
 	performance_profile.plot_performance(performance_path)
 
 
 if __name__ == '__main__':
 	create_performance_profile(root_directory='/home/thallock/Pictures/ConvexConstraintsOutput/runs')
+	# create_performance_profile(root_directory='/home/thallock/Pictures/ConvexConstraintsOutput/old_runs/runs')
 

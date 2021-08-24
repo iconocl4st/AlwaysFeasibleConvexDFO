@@ -1,4 +1,4 @@
-from hott_schittowski.problems import HottSchittowski
+from hock_schittkowski.problems import HockSchittkowski
 from settings import EnvironmentSettings
 from utils.convexity_tester import ConvexityTester
 from utils.formatting import Formatting
@@ -36,7 +36,7 @@ class RunParams:
 	@staticmethod
 	def create(params_map):
 		params = RunParams()
-		params.map = params_map
+		params.map = params_map if params_map is not None else {}
 		return params
 
 	@staticmethod
@@ -56,7 +56,7 @@ class RunResult:
 	COLUMNS = [
 		Column('#', lambda run: run.ht_problem.number),
 		Column('algorithm', lambda run: run.algorithm_name),
-		# Column('params', lambda run: run.run_params),
+		Column('params', lambda run: run.run_params),
 		Column('n', lambda run: run.ht_problem.n),
 		Column('# succ', lambda run: run.history.get_successful_num()),
 		Column('# fail', lambda run: run.history.get_unsuccessful_num()),
@@ -65,16 +65,16 @@ class RunResult:
 
 		Column('min', lambda run: Formatting.format_float(run.get_minimum_evaluation().objective)),
 		Column('true min', lambda run: Formatting.format_float(run.ht_problem.solution.fstar)),
-
-		Column('minimizer', lambda run: Formatting.format_vector(run.get_minimum_evaluation().x)),
-		Column('true minimizer', lambda run: Formatting.format_vector(run.ht_problem.solution.xstar)),
-
+		#
+		# Column('minimizer', lambda run: Formatting.format_vector(run.get_minimum_evaluation().x)),
+		# Column('true minimizer', lambda run: Formatting.format_vector(run.ht_problem.solution.xstar)),
+		#
 		Column('x-error', lambda run: Formatting.format_float(run.get_error_in_x())),
-
-		Column('status', lambda run: run.status),
-		Column('details', lambda run: run.status_details),
-		Column('# iter', lambda run: run.num_iterations),
-		Column('definity', lambda run: run.definiteness),
+		#
+		# Column('status', lambda run: run.status),
+		# Column('details', lambda run: run.status_details),
+		# Column('# iter', lambda run: run.num_iterations),
+		# Column('definity', lambda run: run.definiteness),
 	]
 
 	def __init__(self):
@@ -146,7 +146,7 @@ class RunResult:
 	def parse_json(json_object):
 		result = RunResult()
 		result.algorithm_name = json_object['algorithm-name']
-		result.ht_problem = HottSchittowski.get_problem_by_number(json_object['problem-number'])
+		result.ht_problem = HockSchittkowski.get_problem_by_number(json_object['problem-number'])
 		result.history = History.parse_json(json_object['history'])
 		result.status = json_object['status']
 		result.status_details = json_object['status-details']

@@ -12,12 +12,18 @@ from utils.logger import Logger
 from utils.ellipsoid import Ellipsoid
 from utils.polynomial import MultiIndex
 
-from trial_problems.ht_problem import HottSschittowskiProblem
+from trial_problems.ht_problem import HockSchittkowskiProblem
 
 
 class UserParams(DefaultStringable):
 	def __init__(self):
-		self.threshold_criticality = 1e-4
+		self.basis_type = 'quadratic'
+		self.tr_heuristics = []
+		self.sample_region_strategy = 'conservative-ellipsoid'
+		self.empty_sr_method = 'scale'
+		self.overrides = {}
+
+		self.threshold_criticality = 1e-3
 		self.threshold_tr_radius = 1e-4
 		self.threshold_regularity = 1e-3
 		self.threshold_reduction_sufficient = 0.9
@@ -104,19 +110,38 @@ class UserParams(DefaultStringable):
 			}
 		}
 
+	def create_basis(self, n):
+		if self.basis_type == 'linear':
+			return MultiIndex.get_linear_basis(n)
+		else:
+			return MultiIndex.get_quadratic_basis(n)
+
 	def to_json(self):
-		# TODO
-		return {'type': 'defaults'}
+		return {'overrides': self.overrides}
 
 	@staticmethod
-	def parse_json(self):
-		# TODO
-		return UserParams.create(None)
+	def parse_json(json_object):
+		return UserParams.create(json_object['overrides'])
 
 	@staticmethod
 	def create(overrides):
-		# TODO
 		params = UserParams()
+		params.overrides = overrides
+		if overrides is None:
+			return params
+
+		if 'basis' in overrides and overrides['basis'] == 'linear':
+			params.basis_type = 'linear'
+
+		if 'tr-heuristics' in overrides:
+			params.tr_heuristics = overrides['tr-heuristics']
+
+		if 'sr-strategy' in overrides:
+			params.sample_region_strategy = overrides['sr-strategy']
+
+		if 'on-empty-sample' in overrides:
+			params.empty_sr_method = overrides['on-empty-sample']
+
 		return params
 
 
@@ -186,7 +211,7 @@ class AlgorithmState(DefaultStringable):
 		algo_state = AlgorithmState()
 		algo_state.root_directory = new_root
 
-		algo_state.problem = HottSschittowskiProblem.parse_json(json['problem'])
+		algo_state.problem = HockSchittkowskiProblem.parse_json(json['problem'])
 		algo_state.params = UserParams.parse_json(json['params'])
 
 		algo_state.iteration = json['iteration']
@@ -206,8 +231,7 @@ class AlgorithmState(DefaultStringable):
 		algo_state.plotter = Plotter.parse_json(json['plotter'], new_image_path=os.path.join(new_root, 'images'))
 		algo_state.unbound_radius = json['unbound-radius']
 
-		# The only basis supported right now...
-		algo_state.basis = MultiIndex.get_quadratic_basis(len(algo_state.current_iterate))
+		algo_state.basis = algo_state.params.create_basis(len(algo_state.current_iterate))
 
 		return algo_state
 
@@ -233,7 +257,7 @@ class AlgorithmState(DefaultStringable):
 			problem_spec.get_initial_center(),
 			problem_spec.get_initial_delta()
 		)
-		algo_state.basis = MultiIndex.get_quadratic_basis(len(algo_state.current_iterate))
+		algo_state.basis = algo_state.params.create_basis(len(algo_state.current_iterate))
 		initial_evaluation = algo_state.evaluate(algo_state.current_iterate)
 		make_assertion(initial_evaluation.success, 'Initial point not feasible')
 		return algo_state

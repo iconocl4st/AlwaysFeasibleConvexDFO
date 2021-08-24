@@ -14,6 +14,9 @@ class Quadratic(DefaultStringable):
 	def evaluate(self, x):
 		return self.c + self.g @ x + x @ self.Q @ x
 
+	def multi_eval(self, xs):
+		return self.c + xs @ self.g + np.sum(xs * (self.Q @ xs.T).T, axis=1)
+
 	def evaluate_gradient(self, x):
 		return self.g + 2 * self.Q @ x
 

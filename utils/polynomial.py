@@ -147,6 +147,13 @@ class MultiIndex:
 		)
 
 	@staticmethod
+	def get_linear_basis(dimension):
+		return (
+			MultiIndex.get_indices(0, dimension) +
+			MultiIndex.get_indices(1, dimension)
+		)
+
+	@staticmethod
 	def construct_vandermonde(basis, sample):
 		return np.array([
 			[index.as_exponent(point) for index in basis]

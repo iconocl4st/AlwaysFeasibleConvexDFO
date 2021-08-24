@@ -60,22 +60,31 @@ def create_plotter(m, v, c, rhs, max_x):
 			lambda x: (x - v) @ m @ (x - v),
 			label='intermediate_ellipsoid', color='r', lvls=[0])
 		plot.add_line(v, 0, label='hyperplane', color='k')
-		plot.add_contour(lambda x: np.linalg.norm(x) ** 2 - rhs, label='intersection', color='c', lvls=[-0.1, 0])
-		plot.add_point(max_x, label='furthest point on sphere', color='r', marker='o', s=50)
+		if rhs is not None:
+			plot.add_contour(lambda x: np.linalg.norm(x) ** 2 - rhs, label='intersection', color='c', lvls=[-0.1, 0])
+		if max_x is not None:
+			plot.add_point(max_x, label='furthest point on sphere', color='r', marker='o', s=50)
 	return add_to_plot
 
-
+# v = nv * vh, |vh| = 1
 # cone:
-# x | -(x - v) @ v >= b * norm(v) * norm(x - v)
+# {x | -(x - v) @ v >= b * norm(v) * norm(x - v)}
+# {x | -(x - nv * vh) @ vh >= b * nv * norm(x - nv * vh)}
+# {x | -(x - nv * vh) @ vh >= b * nv * norm(x - nv * vh)}
+
 # ellipsoid:
-# x | (x - c) @ q @ (x - c) <= 1
-def cone_contains_ellipsoid(v, b, q, c, tol=1e-8):
+# {x | (x - c) @ q @ (x - c) <= 1}
+def cone_contains_ellipsoid(nv, vh, b, q, c, tol=1e-8):
+	if abs(nv) < tol:
+		return cone_contains_ellipsoid(1.0, vh, b, q, c + vh, tol)[0], None
+
+	v = nv * vh
 	# It cant contain the vertex...
 	if (v - c) @ q @ (v - c) < 1 + tol:
 		return False, None
 
-	nv = np.linalg.norm(v)
-	vh = v / nv
+	# nv = np.linalg.norm(v)
+	# vh = v / nv
 	rot = get_rotation_matrix(vh)
 	m = np.outer(q @ (v - c), q @ (v - c)) - q * (
 			v @ q @ v + c @ q @ c - 2 * c @ q @ v - 1)
@@ -89,7 +98,7 @@ def cone_contains_ellipsoid(v, b, q, c, tol=1e-8):
 
 	success, s, dist = anti_project_point_onto_ellipsoid(w / wr, -wc, tol)
 	if not success:
-		return False, None
+		return False, create_plotter(m, v, c, None, None)
 	y = wc + s
 	x = rot.T @ np.array([0] + [yi for yi in y], dtype=np.float64)
 	rhs = (1 / b ** 2 - 1) * nv ** 2

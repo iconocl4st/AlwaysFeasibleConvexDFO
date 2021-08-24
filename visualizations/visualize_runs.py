@@ -23,11 +23,11 @@ def generate_table(root_directory):
 def print_table(root_directory):
 	sorted_results = sorted(
 		[e for e in generate_table(root_directory)],
-		key=lambda x: (str(x.ht_problem.number), str(x.algorithm_name)))
-	sorted_results = filter(
-		lambda x: x.algorithm_name == 'always_feasible',
-		sorted_results
-	)
+		key=lambda x: (x.ht_problem.number, str(x.algorithm_name)))
+	# sorted_results = filter(
+	# 	lambda x: x.algorithm_name == 'scipy',
+	# 	sorted_results
+	# )
 	print(Formatting.format_strings(
 		[RunResult.get_headers()] + [
 			te.to_row()
@@ -35,4 +35,5 @@ def print_table(root_directory):
 
 
 if __name__ == '__main__':
-	print_table(root_directory='/home/thallock/Pictures/ConvexConstraintsOutput/runs')
+	print_table(
+		root_directory='/home/thallock/Pictures/ConvexConstraintsOutput/old/runs2')

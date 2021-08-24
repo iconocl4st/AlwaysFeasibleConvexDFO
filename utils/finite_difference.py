@@ -89,6 +89,10 @@ def find_feasible_start(problem):
 		return True, np.array([1.2, 1]), np.array([[1.0, 0.0], [0.0, 1.0]]), 0.1
 	elif problem.number == 249:
 		return True, np.array([2, 1, 1]), np.eye(3), 1
+	elif problem.number == 331:
+		return False, None, None, None
+	elif problem.number == 337:
+		return False, None, None, None
 
 	success, constraints = problem.get_all_le_constraints()
 	if not success:

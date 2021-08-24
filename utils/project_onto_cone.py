@@ -73,3 +73,4 @@ def project_onto_edge_of_cone(vertex, direction, theta, point):
 def sphere_is_contained_within_cone(vertex, direction, theta, point, radius):
 	projection, distance, feasible = project_onto_edge_of_cone(vertex, direction, theta, point)
 	return feasible and radius < distance, projection
+

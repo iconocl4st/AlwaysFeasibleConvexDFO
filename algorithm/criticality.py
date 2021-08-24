@@ -38,7 +38,6 @@ def plot_criticality(state, model, criticality, p, is_critical):
 
 
 def check_criticality(state, model):
-	# TODO: Change this to the unshifted projection...
 	state.logger.start_step('Computing criticality')
 	success, p, _ = project(
 		model.x - model.unshifted_gradient,
@@ -70,8 +69,5 @@ def check_criticality(state, model):
 	except:
 		print('Unable to make criticality plot')
 		raise
-
-	if ret['critical']:
-		print('debug this')
 
 	return ret

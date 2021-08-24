@@ -4,19 +4,21 @@ class Formatting:
 
 	@staticmethod
 	def format_strings(strings):
+		sep = ' & '
+		newl = '\\\\\n'
 		string_lengths = {}
 		for row in strings:
 			for idx, obj in enumerate(row):
 				l = len(str(obj))
 				if idx not in string_lengths or string_lengths[idx] < l:
 					string_lengths[idx] = l
-		return '\n'.join([
-			', '.join([
+		return newl.join([
+			sep.join([
 				str(obj).rjust(string_lengths[idx], ' ')
 				for idx, obj in enumerate(row)
 			])
 			for row in strings
-		])
+		]).replace('_', ' ').replace('#', 'N')
 
 	@staticmethod
 	def format_vector(vec):

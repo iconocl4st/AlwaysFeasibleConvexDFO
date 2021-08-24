@@ -7,6 +7,12 @@ class Polyhedron:
 		self.A = A.astype(np.float64)
 		self.b = b.astype(np.float64)
 
+	def __str__(self):
+		return self.__repr__()
+
+	def __repr__(self):
+		return str(self.A) + 'x <= ' + str(self.b)
+
 	def evaluate(self, x):
 		return self.A @ x - self.b
 
@@ -41,7 +47,7 @@ class Polyhedron:
 			)
 
 	def contains(self, point, tolerance=1e-10):
-		return (np.dot(self.A, point) <= self.b + tolerance).all()
+		return (self.A @ point <= self.b + tolerance).all()
 
 	def shrink(self, center, factor):
 		A = np.copy(self.A)

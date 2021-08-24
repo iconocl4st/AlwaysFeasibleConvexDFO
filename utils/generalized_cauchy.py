@@ -12,6 +12,9 @@ from utils.plotting import Plotting
 from utils.quadratic import Quadratic
 
 
+USE_BINARY_SEARCH_ON_PROJECTED_GRADIENT = False
+
+
 class GeneralizedCauchyParams:
 	def __init__(self):
 		self.radius = None
@@ -70,10 +73,10 @@ class GeneralizedCauchyParams:
 
 def _create_the_books_plot(gcp):
 	import matplotlib.pyplot as pyplt
-	pyplt.close()
+
 	N = 100
-	tt = np.linspace(0, 0.005, N)
-	ss = np.zeros([N, 2])
+	tt = np.linspace(0, 1, N)
+	ss = np.zeros([N, len(gcp.x)])
 	for i in range(N):
 		ss[i] = gcp.x - tt[i] * gcp.gradient
 	yvals = np.zeros(N)
@@ -90,18 +93,26 @@ def _create_the_books_plot(gcp):
 	# for i in range(N):
 	#	uvals[i] = gcp.cur_val - tt[i] * gcp.k_ubs * gcp.gradient @ gcp.gradient
 
-	pyplt.plot(tt, yvals, label='upper bound')
-	pyplt.plot(tt, zvals, label='function values')
-	pyplt.plot(tt, vvals, label='lower bound')
-	pyplt.legend()
-	pyplt.show()
+	fig = pyplt.figure()
+	ax = fig.add_subplot(111)
+
+	ax.plot(tt, yvals, label='upper bound')
+	ax.plot(tt, zvals, label='function values')
+	ax.plot(tt, vvals, label='lower bound')
+	fig.legend()
+
+	plot_path = gcp.plotter.get_next_plot_path('generalized_cauchy', 'gc')
+	fig.savefig(plot_path)
+	pyplt.close()
 
 
 def _do_projection(x, A, b, tol=1e-12, hotstart=None):
 	if np.max(A @ x - b) < tol:
 		return x
 	success, ret, _ = project(x, A, b, hotstart=hotstart, tol=tol)
-	assert success, 'Unable to project negative gradient'
+	if not success:
+		return None
+	# make_assertion(success, 'Unable to project negative gradient')
 	return ret
 
 
@@ -127,7 +138,6 @@ def _binary_search(gcp, t):
 			mid_scaled_gradient = gcp.x - mid_t * gcp.gradient
 			mid_projected_gradient = _do_projection(mid_scaled_gradient, gcp.A, gcp.b, tol=1e-12)
 			mid_val = gcp.model.evaluate(mid_projected_gradient)
-
 
 		completed = upper_t - lower_t <= gcp.tol
 
@@ -184,9 +194,11 @@ def _binary_search(gcp, t):
 
 
 def compute_generalized_cauchy_point(gcp):
+	_create_the_books_plot(gcp)
+
 	tmin = 0
 	# I don't like the following line...
-	t = gcp.radius / max(1e-4, min(20.0, np.linalg.norm(gcp.gradient)))
+	t = max(1e-8, min(20.0, gcp.radius / max(1e-4, np.linalg.norm(gcp.gradient))))
 	tmax = None
 	s = None
 
@@ -194,9 +206,12 @@ def compute_generalized_cauchy_point(gcp):
 	tangent_cone_projections = []
 	ts = [t]
 
-	for k in range(100):
+	for k in range(50):
 		scaled_gradient = gcp.x - t * gcp.gradient
 		s = _do_projection(scaled_gradient, gcp.A, gcp.b, hotstart=s, tol=1e-12)
+		if s is None:
+			# Unable to perform projection: Unable to compute generalized Cauchy point
+			break
 		projections.append(s)
 
 		active_indices = gcp.A @ s - gcp.b > -gcp.tol
@@ -234,7 +249,7 @@ def compute_generalized_cauchy_point(gcp):
 				np.linalg.norm(l) > gcp.k_epp * np.abs(dotpr) / gcp.radius:
 			tmin = t
 		else:
-			if False:
+			if USE_BINARY_SEARCH_ON_PROJECTED_GRADIENT:
 				gcp.logger.log_message('beginning binary search on projected gradient...')
 				bst, bsx, bsf = _binary_search(gcp, t)
 				gcp.logger.log_json('...done:', {
